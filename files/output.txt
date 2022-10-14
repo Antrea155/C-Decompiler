@@ -1,0 +1,111 @@
+C:\project\decompiler\decompiler\src>gcc main.c utils\ll.o
+
+C:\project\decompiler\decompiler\src>a loop.s     
+[5]List_new:20:Initialized List at 00AC16E0
+new block found-> .LC0:
+[5]List_new:20:Initialized List at 00AC1720
+  processing inst-> .string "%d\n"
+new block found-> main:
+[5]List_new:20:Initialized List at 00AC17B0
+  processing inst-> pushq   %rbp
+  processing inst-> movq    %rsp, %rbp
+  processing inst-> subq    $16, %rsp
+  processing inst-> movw    $10, -4(%rbp)
+  processing inst-> movb    $97, -5(%rbp)
+  processing inst-> movw    $0, -2(%rbp)
+  processing inst-> jmp     .L2
+new block found-> .L3:
+[5]List_new:20:Initialized List at 00AC1A20
+  processing inst-> movzwl  -2(%rbp), %eax
+  processing inst-> movl    %eax, %esi
+  processing inst-> movl    $.LC0, %edi
+  processing inst-> movl    $0, %eax
+  processing inst-> call    printf
+  processing inst-> addw    $1, -2(%rbp)
+new block found-> .L2:
+[5]List_new:20:Initialized List at 00AC4F68
+  processing inst-> cmpw    $999, -2(%rbp)
+  processing inst-> jbe     .L3
+  processing inst-> movl    $0, %eax
+  processing inst-> leave
+  processing inst-> ret
+block->.LC0:
+   Instruction
+       mnemonic-> .string
+       operant1-> "%d\n"
+       operant2->
+block->main:
+   Instruction
+       mnemonic-> pushq
+       operant1-> %rbp
+       operant2->
+   Instruction
+       mnemonic-> movq
+       operant1-> %rsp,
+       operant2-> %rbp
+   Instruction
+       mnemonic-> subq
+       operant1-> $16,
+       operant2-> %rsp
+   Instruction
+       mnemonic-> movw
+       operant1-> $10,
+       operant2-> -4(%rbp)
+   Instruction
+       mnemonic-> movb
+       operant1-> $97,
+       operant2-> -5(%rbp)
+   Instruction
+       mnemonic-> movw
+       operant1-> $0,
+       operant2-> -2(%rbp)
+   Instruction
+       mnemonic-> jmp
+       operant1-> .L2
+       operant2->
+block->.L3:
+   Instruction
+       mnemonic-> movzwl
+       operant1-> -2(%rbp),
+       operant2-> %eax
+   Instruction
+       mnemonic-> movl
+       operant1-> %eax,
+       operant2-> %esi
+   Instruction
+       mnemonic-> movl
+       operant1-> $.LC0,
+       operant2-> %edi
+   Instruction
+       mnemonic-> addw
+       operant1-> $1,
+       operant2-> -2(%rbp)
+block->.L2:
+   Instruction
+       mnemonic-> cmpw
+       operant1-> $999,
+       operant2-> -2(%rbp)
+   Instruction
+       mnemonic-> jbe
+       operant1-> .L3
+       operant2->
+   Instruction
+       mnemonic-> movl
+       operant1-> $0,
+       operant2-> %eax
+   Instruction
+       mnemonic-> leave
+       operant1->
+       operant2->
+   Instruction
+       mnemonic-> ret
+       operant1->
+       operant2->
+
+C:\project\decompiler\decompiler\src>
+
+
+
+
+
+

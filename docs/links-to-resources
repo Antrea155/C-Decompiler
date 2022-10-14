@@ -1,0 +1,38 @@
+compiler explorer
+https://godbolt.org/
+
+x86-64 assembly programming
+https://www.youtube.com/watch?v=lUbPUWtmVUU
+
+https://stackoverflow.com/questions/3314919/compile-run-assembler-in-linux
+
+Just enough assembly for compiler explorer
+https://www.youtube.com/watch?v=soeFwz0cOqU
+
+assembly to C example
+https://www.youtube.com/watch?v=wy3e52A7Lu8
+
+compiler explorer
+https://www.youtube.com/watch?v=4_HL3PH4wDg
+
+x86 assembly guide
+https://www.cs.virginia.edu/~evans/cs216/guides/x86.html
+
+learning to read GCC assembler output
+https://stackoverflow.com/questions/2611359/learning-to-read-gcc-assembler-output
+
+c to assembly translation
+https://www.eventhelix.com/embedded/c-to-assembly-translation/
+
+c optimization
+https://gcc.gnu.org/onlinedocs/gcc/Code-Gen-Options.html
+https://gcc.gnu.org/onlinedocs/gcc/Optimize-Options.html
+https://www.geeksforgeeks.org/basic-code-optimizations-in-c/
+http://icps.u-strasbg.fr/~bastoul/local_copies/lee.html
+https://www.eventhelix.com/embedded/optimizing-c-and-cpp-code/
+
+overview of program optimization techniques
+https://www.youtube.com/watch?v=pEvm5NNc6ko
+
+code optimization in compilers
+https://www.youtube.com/watch?v=mP31KpbSXHw
