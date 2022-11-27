@@ -105,10 +105,30 @@ ListElement * List_popElement( List * list ) {
         ret->next->prev = NULL;
     }
     list->head = ret->next;
+    if (list->head == NULL) list->tail = NULL;
     ret->next = NULL;
     list->numItems--;
     return ret;
 }
+
+ListElement * List_popElement_last( List * list ) {
+    ListElement * ret;
+
+    if( list == NULL ) return_error_print( NULL, "Null list given" );
+    if( list->tail == NULL ) return NULL;
+
+    ret = list->tail;
+
+    if( ret->prev != NULL ) {
+        ret->prev->next = NULL;
+    }
+    list->tail = ret->prev;
+    if (list->tail == NULL) list->head = NULL;
+    ret->prev = NULL;
+    list->numItems--;
+    return ret;
+}
+
 
 ListElement * List_getHead( List * list ) {
     return list->head;

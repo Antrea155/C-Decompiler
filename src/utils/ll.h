@@ -1,5 +1,5 @@
-#ifndef DDE_LL_H
-#define DDE_LL_H
+#ifndef DECOMPILER_LL_H
+#define DECOMPILER_LL_H
 #include "../includes/includes.h"
 
 
@@ -70,6 +70,13 @@ bool _List_pushElement_back( List * list, ListElement * listElement );
 ListElement * List_popElement( List * list );
 
 /**
+ * Pops and removes an element from the tail of the list
+ * @param list {List *} - The list
+ * @return {ListElement *} - The list element to cast to whatever datatype you wish.
+ */
+ListElement * List_popElement_last( List * list );
+
+/**
  * Gets head element
  * @param list  {List *} - The list
  * @return {ListElement *} - The head list element
@@ -121,4 +128,4 @@ bool _List_remove( List * list, ListElement * listElement );
 bool List_is_empty( List * list );
 
 
-#endif //DDE_LL_H
+#endif //DECOMPILER_LL_H

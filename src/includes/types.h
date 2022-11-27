@@ -1,5 +1,5 @@
-#ifndef DAEDALOS_EXEPARSER_TYPES_H
-#define DAEDALOS_EXEPARSER_TYPES_H
+#ifndef DECOMPILER_TYPES_H
+#define DECOMPILER_TYPES_H
 
 
 #include <stdint.h>
@@ -7,18 +7,13 @@
 //#include <types.h>
 
 typedef int64_t address;
-typedef unsigned char * ptr_buffer;
+typedef signed char  int8_t;
+typedef signed short int16_t;
+typedef signed int   int32_t;
+typedef unsigned char  uint8_t;
+typedef unsigned short uint16_t;
+typedef unsigned int   uint32_t;
+typedef signed long long   int64_t;
+typedef unsigned long long uint64_t;
 
-typedef enum exeTypes {PE, ELF} exeTypes;
-
-typedef struct {
-    address virtualAddress; //Virtual address as if the exe was loaded into memory
-    address realAddress; //Real address this exists in our memory
-} Address;
-
-typedef struct {
-    size_t virtualSize;
-    size_t realSize;
-} Size;
-
-#endif //DAEDALOS_DE_TYPES_H
+#endif 

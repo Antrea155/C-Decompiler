@@ -1,5 +1,5 @@
-#ifndef DAEDALOS_DE_INCLUDES_H
-#define DAEDALOS_DE_INCLUDES_H
+#ifndef DECOMPILER_INCLUDES_H
+#define DECOMPILER_INCLUDES_H
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdbool.h>
@@ -18,7 +18,7 @@
 #define VERB_TRACE  6
 
 
-int glob_veriable = 5;
+extern int glob_veriable;
 
 #define dlprintf( lvl, fmt, ... ) { \
 	if( lvl <= glob_veriable ) \
@@ -47,4 +47,4 @@ int glob_veriable = 5;
  * Malloc Wrappers
  */
 
-#endif //DAEDALOS_DE_INCLUDES_H
+#endif //DECOMPILER_INCLUDES_H
