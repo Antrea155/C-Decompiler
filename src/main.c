@@ -56,5 +56,4 @@ int main(int argc, char* argv[]) {  // argc is the number of inputs thats entere
       generate_cfg_dot_images(funcBlocksP);
     }
 
-    data_flow(funcBlocksP, stringBlocksP);
 }
