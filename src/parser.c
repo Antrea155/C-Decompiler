@@ -1,0 +1,538 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdarg.h>
+#include <ctype.h>
+
+#include "utils/ll.h"
+#include "models/assembly.h"
+
+
+#define FOREVER for(;;)
+#define MAX_CHARS_IN_LINE 200
+
+int glob_veriable = 2;
+extern const instr_map instr_table[];
+extern int instr_table_length;
+
+void trim(char * s) {      
+    //remove trailing and leading spaces
+    //TODO remove spaces between brackets
+
+    char * p = s;       //input string pointer
+    int l = strlen(p);
+
+    while(isspace(p[l - 1])) //replacing the spaces at the end with zero
+            p[--l] = 0;
+            
+    while(* p && isspace(* p)) //moving pointer until no space is found
+            ++p, --l;
+
+    memmove(s, p, l + 1); //overrite input string 
+}   
+
+
+
+void print_instructions(List *Instructions) {
+
+    List_reset(Instructions);
+    for (int i = 0; i < Instructions->numItems; i++) {
+      Instruction *ins = (Instruction *)List_getNextElement(Instructions);
+      printf("   Instruction with %d operands\n",ins->opcount);
+      printf("       mnemonic-> %s\n",ins->mnemonic);
+      printf("       mnem_id -> %d\n",ins->mnem_id);  
+      printf("       size    -> %d\n",ins->size);
+      //printf("       flags   -> %d\n",ins->flags);
+     
+      for (int i=0;i<ins->opcount;i++) {
+           printf("           operand-> %s\n",ins->operands[i].op_string);
+           if (ins->operands[i].type == OP_TYPE_IMM)
+           printf("                imm value-> %s\n",ins->operands[i].value.imm);
+      }
+      
+    }
+}
+
+void print_func_block(FuncBlock *funcBlockp){
+
+   List *funcBBlistP = &(funcBlockp->funcBBlist);
+   List_reset(funcBBlistP);
+
+   for (int i = 0; i < funcBBlistP->numItems; i++) {
+
+     BasicBlock *block = (BasicBlock *)List_getNextElement(funcBBlistP);
+     printf("   basic block with label -> %s\n",block->label);
+     printf("      leftOp -> %s\n",block->leftOp);
+     printf("      rightOp -> %s\n",block->rightOp);
+     printf("      cmpOperator-> %s\n",block->compOperator);
+     printf("      thenLabel-> %s\n",block->thenLabel);
+     printf("      elseLabel-> %s\n",block->elseLabel);
+     print_instructions(&(block->Instructions));
+
+   }
+   
+}
+
+void print_blocks(List *funcBlocksP) {
+
+    List_reset(funcBlocksP);     //point to the first block
+   // printf("number of progblocks->%d\n", funcBlocksP->numItems);
+     for (int i = 0; i < funcBlocksP->numItems; i++) {
+
+      FuncBlock *block = (FuncBlock *)List_getNextElement(funcBlocksP);
+
+      printf("Function block ->%s\n",block->funcName);
+    //  if (block->type == FUNC)
+        print_func_block(block);
+
+    }
+}
+
+void print_string_blocks(List *stringBlocksP) {
+
+    List_reset(stringBlocksP);     //point to the first block
+   // printf("number of progblocks->%d\n", funcBlocksP->numItems);
+     for (int i = 0; i < stringBlocksP->numItems; i++) {
+
+      StringBlock *block = (StringBlock *)List_getNextElement(stringBlocksP);
+
+      printf("String block label ->%s string->%s\n",block->label, block->string);
+   
+
+    }
+}
+
+
+char *get_temp_label() {
+
+  static int index=0;
+  char buf[3], tl[8];
+
+    index++;
+    itoa(index,buf,10);
+    strcpy(tl,".TL");
+
+    strcat(tl,buf);
+  return strdup(tl);
+
+}
+
+static int is_trap_ins(Instruction *ins) {
+  switch(ins->mnem_id) {
+  case int3:
+  case ud2:
+    return 1;
+  default:
+    return 0;
+  }
+}
+
+
+
+static int is_call_ins(Instruction *ins) {
+  switch(ins->mnem_id) {
+  case call:
+  case lcall:
+    return 1;
+  default:
+    return 0;
+  }
+}
+
+static int is_ret_ins(Instruction *ins) {
+  switch(ins->mnem_id) {
+  case ret:
+  case lret:
+    return 1;
+  default:
+    return 0;
+  }
+}
+
+
+static int is_unconditional_jmp_ins(Instruction *ins) {
+  switch(ins->mnem_id) {
+  case jmp:
+    return 1;
+  default:
+    return 0;
+  }
+}
+
+static int is_conditional_cflow_ins(Instruction *ins) {
+  switch(ins->mnem_id) {
+  case jae:
+  case ja:
+  case jbe:
+  case jb:
+  case jcxz:
+  case jecxz:
+  case je:
+  case jge:
+  case jg:
+  case jle:
+  case jl:
+  case jne:
+  case jno:
+  case jnp:
+  case jns:
+  case jo:
+  case jp:
+  //case jrcxz:
+  case js:
+    return 1;
+  case jmp:
+  default:
+    return 0;
+  }
+}
+
+static int is_cflow_ins(Instruction *ins) {
+
+  return (is_unconditional_jmp_ins(ins) || is_call_ins(ins) || is_ret_ins(ins) );
+  
+}
+
+
+int process_instruction_details(Instruction *ins) {
+
+    int init, ret, jmp, cflow, cond, call, nop, only_nop, priv, trap;
+    bool found = false;
+
+    for (int i=0; i<instr_table_length; i++) {
+         
+        if (!strcmp(ins->mnemonic, instr_table[i].instr_name)) {
+            ins->mnem_id = instr_table[i].mnem_id;
+            ins->size = instr_table[i].size;
+            found=true;
+            break;
+        }
+          
+    };
+
+    if (!found) {
+      printf("invalid instruction ->%s\n",ins->mnemonic);
+      return 0;
+    }
+
+    trap  = is_trap_ins(ins);
+    ret   = is_ret_ins(ins);
+    jmp   = is_unconditional_jmp_ins(ins);// || is_conditional_cflow_ins(ins);
+    cond  = is_conditional_cflow_ins(ins);
+    cflow = is_cflow_ins(ins);
+    call  = is_call_ins(ins);
+
+    ins->trap       = trap;
+    
+    if(ret)   ins->flags |= INS_FLAG_RET;
+    if(jmp)   ins->flags |= INS_FLAG_JMP;
+    if(cond)  ins->flags |= INS_FLAG_COND;
+    if(cflow) ins->flags |= INS_FLAG_CFLOW;
+    if(call)  ins->flags |= INS_FLAG_CALL;
+  
+   return 1;
+}
+
+void process_operand(char *op_string, Operand *op, Instruction *ins) {
+
+    char *firstpos;
+    char  offsets[20];
+    op->op_string = strdup(op_string);
+
+    //determine if operand is Immediate, Register or Memory (pointer to a memory location)
+    if (op_string[0] == '$') {
+        //operand is of the form $x
+      op->type = OP_TYPE_IMM;
+      strcpy(op->value.imm, op_string+1);  
+
+    } else if (op_string[0] == '%') {
+        //operand is of the form %reg
+        op->type = OP_TYPE_REG;
+        strcpy(op->value.reg, op_string+1);
+        if (ins->flags == INS_FLAG_CFLOW) ins->flags |= INS_FLAG_INDIRECT;
+
+    } else if ( (firstpos=strchr(op_string ,'(')) && (strchr(firstpos+1,')')) ) {
+        //operand is of the form (%reg) or offset(%reg) where %reg is the base reg  -> reg+offset 
+        //TODO it can also be segment:offset(%reg1,$reg2,scale)  or offset(base,index,scale) -> base+index*scale+offset
+        // don't handle segment
+        // offset is optional
+        // scale is optional. defualt is 1
+        // base is optional eg offset(,index,scale)
+        op->type = OP_TYPE_MEM;
+        strcpy(op->value.reg, firstpos+2);
+        op->value.reg[strlen(op->value.reg)-1] = 0; //remove ) from reg name
+        strncpy(offsets, op_string, strlen(op_string) - strlen(firstpos));
+        op->value.offset = atoi(offsets);
+        
+        if (ins->flags == INS_FLAG_CFLOW) ins->flags |= INS_FLAG_INDIRECT;
+
+    } else if (op_string[0] == '.') {
+        //for example jbe .L3 operand is .L3
+        //this will be processed by target blocks procedure
+        //TODO type=CONSTANT
+
+    } else
+        printf("invalid operand ->%s\n",op_string);
+    
+
+}
+
+int process_instruction(char *inst, Instruction **instP) {
+
+    char *currentWord;
+
+    printf("  processing inst-> %s\n",inst);
+    Instruction *instructionP;
+  
+    // allocate memory for intruction structure and initialize fields
+    instructionP = malloc(sizeof(Instruction));
+    instructionP->mnemonic = 0;
+    instructionP->mnem_id = 0;
+    instructionP->size = 0;
+    instructionP->opcount = 0;
+    instructionP->flags = 0;
+    //instructionP->target = 0;
+    instructionP->trap = false;
+    
+
+    currentWord = strtok(inst, " ");        //tokenise instruction
+    int index = 0;
+    /*Run over instruction line (word-by-word)*/
+    while (currentWord != NULL)
+    {
+            //printf("      word-> %s <-\n",currentWord);
+            if(currentWord[strlen(currentWord)-1] ==',' )  
+                    currentWord[strlen(currentWord)-1] =0;      
+            
+            //first word in instruction's line is the mnemonic
+            if (index == 0) {
+                 instructionP->mnemonic = strdup(currentWord);
+                 if (!process_instruction_details(instructionP)) {
+                  free(instructionP);
+                  return 0;
+                 };
+            }
+
+            //following words are the operands
+            if (index == 1){       
+                process_operand(currentWord, &instructionP->operands[0], instructionP);                  
+               
+            }
+            if (index == 2) {
+                process_operand(currentWord, &instructionP->operands[1], instructionP);
+               
+            }
+            if (index == 3) {
+                process_operand(currentWord, &instructionP->operands[2], instructionP);
+                
+            }
+
+
+            index++;
+           
+            currentWord = strtok(NULL, " ");
+            //continue;
+    }
+    
+    instructionP->opcount = index-1;
+    *instP = instructionP;
+    return 1;
+   // List_pushElement_back( Instructions, instructionP); 
+    
+}
+
+/*
+void process_string_constants(List *blocks) {
+//update the value of an IMM operand with the contents of constant strings
+// for example for  movl  $.LC0, %edi  find and update the value of the first operand with LC0 string contents
+
+printf("processing string constants\n");
+    BasicBlock *targetBlock=0;
+
+    List_reset(blocks);     //point to the first block
+
+     for (int i = 0; i < blocks->numItems; i++) {
+
+       BasicBlock *block = (BasicBlock *)List_getNextElement(blocks);
+       List *instructions = &(block->Instructions);
+       List_reset(instructions);
+
+         for (int i = 0; i < instructions->numItems; i++) {
+           
+            targetBlock=0;
+            Instruction *ins = (Instruction *)List_getNextElement(instructions);
+            if ((ins->operands[0].type == OP_TYPE_IMM) && (ins->operands[0].value.imm[0]=='.')){
+                
+                ListElement *current = blocks->current;  //save current pointer
+                targetBlock = find_block(ins->operands[0].value.imm, blocks);
+                blocks->current = current;  //restore current pointer
+                if (targetBlock) {
+                    Instruction *tempins = (Instruction *)(targetBlock->Instructions.head);
+                    strcpy(ins->operands[0].value.imm, tempins->operands[0].op_string);
+                    printf("process strings: found target block with string ->%s<-\n", ins->operands[0].value.imm);
+                }
+            }
+        }
+      
+
+    }
+
+   
+
+}
+*/
+
+void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
+
+    
+    //ProgBlock *progblockP;
+    FuncBlock *funcblockP = 0;
+    StringBlock *stringblockP;
+    BasicBlock *basicblockP;
+    Instruction *instp;
+    bool seen_unc_jump = false;
+
+    char currentLine[MAX_CHARS_IN_LINE];
+    char testline[MAX_CHARS_IN_LINE];
+
+    printf("instructions table loded. size ->%d\n", instr_table_length);
+    
+
+    FOREVER     //endles loop
+    {
+        /*Hold the current line in file*/
+        fgets(currentLine, MAX_CHARS_IN_LINE, fpointer); 
+        currentLine[strlen(currentLine)-1]=0; 
+
+        //remove leading spaces
+        trim(currentLine);
+
+        /*Check if we get to the end of the file*/
+        if(feof(fpointer))
+            break;
+
+        // check if current line is the beginning of a string label a function or function label
+        if (currentLine[strlen(currentLine)-1]== ':') { 
+
+            currentLine[strlen(currentLine)-1] = 0 ; //remove : from end of label
+
+            if (!strncmp(currentLine,".LC",3)) {  // a string label
+
+              /* create a new string block for the new string label*/
+                stringblockP = (StringBlock *)malloc(sizeof(StringBlock)); //creating memory space 
+                stringblockP->label = strdup(currentLine);
+                
+                //get next line where the string constant exists
+                fgets(currentLine, MAX_CHARS_IN_LINE, fpointer); 
+                //trim(currentLine);
+
+                currentLine[strlen(currentLine)-1]=0; 
+                stringblockP->string = strdup(strchr(strstr(currentLine,".string"), ' '));
+                if (stringblockP->string) printf("found string label %s with string ->%s\n",stringblockP->label,stringblockP->string);
+                else printf("string for label %s not found\n", stringblockP->label);
+                // add new string block to the list
+                List_pushElement_back( stringBlocks, stringblockP); 
+
+                continue;
+            }
+
+            if (currentLine[0]!='.') {  //a function name is found
+
+                printf("start of new function found-> %s\n",currentLine);
+                   
+                 //create a new func block 
+                funcblockP = (FuncBlock *)calloc(1,sizeof(FuncBlock)); //creating memory space
+                funcblockP->funcName = strdup(currentLine);
+
+                
+               //add current func block to the func blocks list
+                List_pushElement_back( funcBlocks, funcblockP); 
+                
+                //create a list to hold the basic blocks of the new function
+                List_new(&(funcblockP->funcBBlist));
+                
+                //create a new basic block for the instructions just after the function definition
+                basicblockP = (BasicBlock *)calloc(1,sizeof(BasicBlock)); //creating memory space
+                basicblockP->label = get_temp_label();
+                //add current basic block to the func basic blocks list
+                List_pushElement_back( &(funcblockP->funcBBlist), basicblockP); 
+                 //create a list to hold the instructions in the basic block
+                List_new(&(basicblockP->Instructions));
+                List_new(&(basicblockP->Predecessors));
+                // go and get the instructions of the current basic block
+                continue;
+
+            } else if (currentLine[0]=='.') {  //a label within a function is found
+               
+                printf("a label within the current function found-> %s\n",currentLine);
+                // the current bb will flow through to this new bb unless there was a jmp instr at the end of this bb
+                if(!seen_unc_jump) basicblockP->thenLabel = strdup(currentLine);
+                seen_unc_jump=false;
+                 //create a new basic block for the instructions of the current label
+                basicblockP = (BasicBlock *)malloc(sizeof(BasicBlock)); //creating memory space
+                basicblockP->label =strdup(currentLine);
+                //add current basic block to the func basic blocks list
+                List_pushElement_back( &(funcblockP->funcBBlist), basicblockP); 
+                 //create a list to hold the instructions in the basic block
+                List_new(&(basicblockP->Instructions));
+                List_new(&(basicblockP->Predecessors));
+                // go and get the instructions of the current basic block
+                continue;
+            } 
+        } 
+
+        /*if we come here it means that the line is an instruction. 
+          process it and add it to the current basic block of the current func block */
+        
+         // instp will have a pointer to a new instruction block after processing
+         if (!process_instruction(currentLine, &instp)) continue;  //skip the instruction if something went wrong
+
+         if (instp->flags & INS_FLAG_COND ) {
+
+           //for example-> jle .L2
+           printf("processing conditional jump instruction->%s\n",instp->mnemonic);
+           basicblockP->thenLabel = strdup(instp->operands[0].op_string);  //etc .L2
+           // create a temp label for else instructions bb to be created
+           char *templabel = get_temp_label();
+           basicblockP->elseLabel = templabel;  //etc .TL3
+           basicblockP->compOperator = strdup(instp->mnemonic);  //etc jle
+
+           //pop the last instruction from current basic block. this must be the compare instruction before the
+           //existing cond jump instruction
+           instp = (Instruction *)List_popElement_last(&(basicblockP->Instructions));
+        
+            basicblockP->leftOp = strdup(instp->operands[0].op_string);
+            if (instp->opcount==2)
+               basicblockP->rightOp = strdup(instp->operands[1].op_string);
+            
+
+              //create a new basic block for the else instructions 
+            basicblockP = (BasicBlock *)malloc(sizeof(BasicBlock)); //creating memory space
+            basicblockP->label = templabel;
+              
+            //add the new basic block to the func basic blocks list
+            List_pushElement_back( &(funcblockP->funcBBlist), basicblockP); 
+              //create a list to hold the instructions in the basic block
+            List_new(&(basicblockP->Instructions));
+            List_new(&(basicblockP->Predecessors));
+
+         } else if (instp->flags & INS_FLAG_JMP ) {
+              
+            //for example -> jmp .L3
+            //if exists, this can only be the last instruction of the current bb
+            printf("processing jump instruction->%s\n",instp->mnemonic);
+            basicblockP->thenLabel = strdup(instp->operands[0].op_string); //etc .L3
+            seen_unc_jump = true;
+
+         } else
+        
+              List_pushElement_back( &(basicblockP->Instructions), instp);
+        
+    }
+
+   //process_target_blocks(funcBlocks);
+
+   //process_string_constants(funcBlocks);
+ 
+   
+}
