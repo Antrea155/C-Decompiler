@@ -42,12 +42,16 @@ void print_instructions(List *Instructions) {
       printf("       mnemonic-> %s\n",ins->mnemonic);
       printf("       mnem_id -> %d\n",ins->mnem_id);  
       printf("       size    -> %d\n",ins->size);
-      //printf("       flags   -> %d\n",ins->flags);
+      printf("       grpid   -> %d\n",ins->grpid);
      
       for (int i=0;i<ins->opcount;i++) {
            printf("           operand-> %s\n",ins->operands[i].op_string);
-           if (ins->operands[i].type == OP_TYPE_IMM)
+           if (ins->operands[i].type1 == OP_TYPE_IMM)
            printf("                imm value-> %s\n",ins->operands[i].value.imm);
+           if (ins->operands[i].type1 == OP_TYPE_PTR) {
+           printf("                offset   -> %s\n",ins->operands[i].ptr.offset);
+           printf("                type2    -> %d\n",ins->operands[i].type2);
+           }
       }
       
     }
@@ -117,92 +121,17 @@ char *get_temp_label() {
 
 }
 
-static int is_trap_ins(Instruction *ins) {
-  switch(ins->mnem_id) {
-  case int3:
-  case ud2:
-    return 1;
-  default:
-    return 0;
-  }
-}
-
-
-
-static int is_call_ins(Instruction *ins) {
-  switch(ins->mnem_id) {
-  case call:
-  case lcall:
-    return 1;
-  default:
-    return 0;
-  }
-}
-
-static int is_ret_ins(Instruction *ins) {
-  switch(ins->mnem_id) {
-  case ret:
-  case lret:
-    return 1;
-  default:
-    return 0;
-  }
-}
-
-
-static int is_unconditional_jmp_ins(Instruction *ins) {
-  switch(ins->mnem_id) {
-  case jmp:
-    return 1;
-  default:
-    return 0;
-  }
-}
-
-static int is_conditional_cflow_ins(Instruction *ins) {
-  switch(ins->mnem_id) {
-  case jae:
-  case ja:
-  case jbe:
-  case jb:
-  case jcxz:
-  case jecxz:
-  case je:
-  case jge:
-  case jg:
-  case jle:
-  case jl:
-  case jne:
-  case jno:
-  case jnp:
-  case jns:
-  case jo:
-  case jp:
-  //case jrcxz:
-  case js:
-    return 1;
-  case jmp:
-  default:
-    return 0;
-  }
-}
-
-static int is_cflow_ins(Instruction *ins) {
-
-  return (is_unconditional_jmp_ins(ins) || is_call_ins(ins) || is_ret_ins(ins) );
-  
-}
-
 
 int process_instruction_details(Instruction *ins) {
 
-    int init, ret, jmp, cflow, cond, call, nop, only_nop, priv, trap;
+   // int init, ret, jmp, cflow, cond, call, nop, only_nop, priv, trap;
     bool found = false;
 
     for (int i=0; i<instr_table_length; i++) {
          
         if (!strcmp(ins->mnemonic, instr_table[i].instr_name)) {
             ins->mnem_id = instr_table[i].mnem_id;
+            ins->grpid = instr_table[i].grpid;
             ins->size = instr_table[i].size;
             found=true;
             break;
@@ -211,45 +140,41 @@ int process_instruction_details(Instruction *ins) {
     };
 
     if (!found) {
-      printf("invalid instruction ->%s\n",ins->mnemonic);
-      return 0;
+      //check if it is a conditional set instruction (not defined in table)
+      if (!strncmp(ins->mnemonic,"set",3)) {
+        ins->grpid = INS_GRP_CSET;
+        //ins->flags |= INS_FLAG_CSET;
+        return 1;
+      } else {
+        printf("invalid instruction ->%s\n",ins->mnemonic);
+        return 0;
+      }
     }
 
-    trap  = is_trap_ins(ins);
-    ret   = is_ret_ins(ins);
-    jmp   = is_unconditional_jmp_ins(ins);// || is_conditional_cflow_ins(ins);
-    cond  = is_conditional_cflow_ins(ins);
-    cflow = is_cflow_ins(ins);
-    call  = is_call_ins(ins);
-
-    ins->trap       = trap;
-    
-    if(ret)   ins->flags |= INS_FLAG_RET;
-    if(jmp)   ins->flags |= INS_FLAG_JMP;
-    if(cond)  ins->flags |= INS_FLAG_COND;
-    if(cflow) ins->flags |= INS_FLAG_CFLOW;
-    if(call)  ins->flags |= INS_FLAG_CALL;
   
    return 1;
 }
 
-void process_operand(char *op_string, Operand *op, Instruction *ins) {
+void process_operand(char *op_string, Operand *op) {
 
     char *firstpos;
-    char  offsets[20];
+    char  offsets[20]; memset(offsets,0,20);
     op->op_string = strdup(op_string);
 
     //determine if operand is Immediate, Register or Memory (pointer to a memory location)
     if (op_string[0] == '$') {
-        //operand is of the form $x
-      op->type = OP_TYPE_IMM;
+        //operand is of the form $x or $.LCx
+      op->type1 = OP_TYPE_IMM;
       strcpy(op->value.imm, op_string+1);  
+      if (op_string[1] == '.') op->type2 = OP_TYPE_LABEL; else op->type2 = OP_TYPE_NUM;
 
     } else if (op_string[0] == '%') {
         //operand is of the form %reg
-        op->type = OP_TYPE_REG;
-        strcpy(op->value.reg, op_string+1);
-        if (ins->flags == INS_FLAG_CFLOW) ins->flags |= INS_FLAG_INDIRECT;
+        op->type1 = OP_TYPE_REG;
+        strcpy(op->value.reg, op_string);
+        if (!strcmp(op_string, "%ebp") || !strcmp(op_string,"%rbp")) op->type2 = OP_TYPE_SBR; //stack base reg
+        if (!strcmp(op_string, "%esp") || !strcmp(op_string,"%rsp")) op->type2 = OP_TYPE_STR; //stack top reg
+       
 
     } else if ( (firstpos=strchr(op_string ,'(')) && (strchr(firstpos+1,')')) ) {
         //operand is of the form (%reg) or offset(%reg) where %reg is the base reg  -> reg+offset 
@@ -258,20 +183,25 @@ void process_operand(char *op_string, Operand *op, Instruction *ins) {
         // offset is optional
         // scale is optional. defualt is 1
         // base is optional eg offset(,index,scale)
-        op->type = OP_TYPE_MEM;
-        strcpy(op->value.reg, firstpos+2);
+        op->type1 = OP_TYPE_PTR;
+        strcpy(op->value.reg, firstpos+1);
         op->value.reg[strlen(op->value.reg)-1] = 0; //remove ) from reg name
         strncpy(offsets, op_string, strlen(op_string) - strlen(firstpos));
-        op->value.offset = atoi(offsets);
-        
-        if (ins->flags == INS_FLAG_CFLOW) ins->flags |= INS_FLAG_INDIRECT;
+ 
+        if (strlen(offsets)) strcpy(op->ptr.offset, offsets); 
+        if ((!strcmp(op->value.reg, "%ebp") || !strcmp(op->value.reg,"%rbp")))
+          op->type2 = OP_TYPE_SBP; 
+        if (!strcmp(op->value.reg, "%esp") || !strcmp(op->value.reg,"%rsp"))
+          op->type2 = OP_TYPE_STP; //pointer to top of stack
+      
 
     } else if (op_string[0] == '.') {
         //for example jbe .L3 operand is .L3
-        //this will be processed by target blocks procedure
-        //TODO type=CONSTANT
+        //this will be processed by link blocks procedure
+        
 
-    } else
+    } 
+    else
         printf("invalid operand ->%s\n",op_string);
     
 
@@ -284,18 +214,11 @@ int process_instruction(char *inst, Instruction **instP) {
     printf("  processing inst-> %s\n",inst);
     Instruction *instructionP;
   
-    // allocate memory for intruction structure and initialize fields
-    instructionP = malloc(sizeof(Instruction));
-    instructionP->mnemonic = 0;
-    instructionP->mnem_id = 0;
-    instructionP->size = 0;
-    instructionP->opcount = 0;
-    instructionP->flags = 0;
-    //instructionP->target = 0;
-    instructionP->trap = false;
+    // allocate memory for intruction structure and initialize fields to 0
+    instructionP = (Instruction *)calloc(1,sizeof(Instruction));
     
 
-    currentWord = strtok(inst, " ");        //tokenise instruction
+    currentWord = strtok(inst, " ");        //tokenise instruction with space char
     int index = 0;
     /*Run over instruction line (word-by-word)*/
     while (currentWord != NULL)
@@ -314,16 +237,28 @@ int process_instruction(char *inst, Instruction **instP) {
             }
 
             //following words are the operands
-            if (index == 1){       
-                process_operand(currentWord, &instructionP->operands[0], instructionP);                  
+            if (index == 1){  
+              //breaks if instruction is a call to  a function with 2 parms due to space in between
+              //copy only the func name up to (        
+                if (instructionP->grpid == INS_GRP_CALL) {
+                   char *pos = strchr(currentWord ,'('); 
+                   char func[20]; 
+                   if (pos) strncpy(func, currentWord, strlen(currentWord)-strlen(pos));
+                  
+                   instructionP->operands[0].op_string= (pos ? strdup(func) : strdup(currentWord));
+                   index++;
+                   break;
+                }
+
+                process_operand(currentWord, &instructionP->operands[0]);                  
                
             }
             if (index == 2) {
-                process_operand(currentWord, &instructionP->operands[1], instructionP);
+                process_operand(currentWord, &instructionP->operands[1]);
                
             }
             if (index == 3) {
-                process_operand(currentWord, &instructionP->operands[2], instructionP);
+                process_operand(currentWord, &instructionP->operands[2]);
                 
             }
 
@@ -487,7 +422,7 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
          // instp will have a pointer to a new instruction block after processing
          if (!process_instruction(currentLine, &instp)) continue;  //skip the instruction if something went wrong
 
-         if (instp->flags & INS_FLAG_COND ) {
+         if (instp->grpid == INS_GRP_CJMP ) {
 
            //for example-> jle .L2
            printf("processing conditional jump instruction->%s\n",instp->mnemonic);
@@ -516,7 +451,7 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
             List_new(&(basicblockP->Instructions));
             List_new(&(basicblockP->Predecessors));
 
-         } else if (instp->flags & INS_FLAG_JMP ) {
+         } else if (instp->grpid == INS_GRP_JMP ) {
               
             //for example -> jmp .L3
             //if exists, this can only be the last instruction of the current bb

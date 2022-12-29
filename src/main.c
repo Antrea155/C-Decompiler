@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include "utils/ll.h"
 
-#define VERBOSE_PARSE false
-#define VERBOSE_CFG false
+#define VERBOSE_PARSE true
+#define VERBOSE_CFG true
 
 void parse_assembly(FILE* fpointer, List *funBlocks, List *stringBlocks);
 void print_blocks(List *Blocks);
@@ -56,4 +56,5 @@ int main(int argc, char* argv[]) {  // argc is the number of inputs thats entere
       generate_cfg_dot_images(funcBlocksP);
     }
 
+    data_flow(funcBlocksP, stringBlocksP);
 }

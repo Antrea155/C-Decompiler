@@ -50,7 +50,7 @@ void create_CFG(List *funcblocks) {
 
     BasicBlock *targetBlock=0;
 
-    List_reset(funcblocks);     //point to the first block
+    List_reset(funcblocks);     //point to the first funcblock
 
      for (int i = 0; i < funcblocks->numItems; i++) {
 
@@ -238,7 +238,7 @@ FILE * init_image(char *filename) {
     FILE *fpointer;
     char filen[40];
 
-    strcpy(filen,"d:\\andrea\\project\\dot\\");
+    strcpy(filen,"C:\\decompiler\\dot\\");
     strcat(filen,filename);
     strcat(filen,".dot");
     fpointer = fopen(filen, "w+");

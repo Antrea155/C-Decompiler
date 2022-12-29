@@ -10,38 +10,60 @@ typedef enum {
     OP_TYPE_NONE=0,
     OP_TYPE_REG=1, 
     OP_TYPE_IMM=2, 
-    OP_TYPE_MEM=3, 
+    OP_TYPE_PTR=3, 
     OP_TYPE_FP=4 
-    } OperandType;
+    } OperandType1;
+
+typedef enum { 
     
+    OP_TYPE_NUM=5,    //$x
+    OP_TYPE_LABEL=6,  //$.LCx
+    OP_TYPE_SBR=7,     //stack base reg %ebp %rbp
+    OP_TYPE_STR=8,     //stack top reg %esp %rsp
+    OP_TYPE_SBP=9,     //stack base ptr (%ebp) (%rbp)
+    OP_TYPE_STP=10     //stack top ptr (%esp) (%rsp)
+  
+    } OperandType2;
+
 typedef enum  {
-    INS_FLAG_CFLOW    = 0x001,
-    INS_FLAG_COND     = 0x002,
-    INS_FLAG_INDIRECT = 0x004,
-    INS_FLAG_JMP      = 0x008,
-    INS_FLAG_CALL     = 0x010,
-    INS_FLAG_RET      = 0x020,
-    INS_FLAG_NOP      = 0x040
-  } InstructionFlags;
+    INS_GRP_NONE=0,
+    INS_GRP_MOV=1, 
+    INS_GRP_ADD=2, 
+    INS_GRP_SUB=3, 
+    INS_GRP_MULT=4,
+    INS_GRP_CJMP=5,
+    INS_GRP_JMP=6,
+    INS_GRP_TEST=7,
+    INS_GRP_CSET=8,
+    INS_GRP_CALL=8,
+    INS_GRP_CMP=9 
+  } InstrGroup;
 
 typedef enum  { NOCOND, IF, IFELSE } CONDITIONAL;
 
+typedef struct {
+ 
+  char offset[10];
+  char scale[10];
+
+} X86ptr;
 
 typedef union  {
-    
-        char       reg[10];  //eax, esi, edi, etc
+        char       reg[10]; //eax, esi, edi, etc
         char       imm[10];  //if IMM the actual value
         double     fp;
-        int    offset;   //if MEM the offset from the pointer
+      
 } X86Value;
 
 
 typedef struct {
 
   char         *op_string;  
-  OperandType  type;  //REG, IMM, MEM, etc
+  OperandType1  type1;  //REG, IMM, MEM
+  OperandType2  type2;  //NUM, LABEL, etc
   uint8_t      size;
   X86Value     value;
+  X86ptr       ptr;
        
 } Operand;
 
@@ -49,8 +71,9 @@ typedef struct {
     
  ListElement      listElement;
  x86_insn          mnem_id;
+ InstrGroup       grpid;
  uint8_t          size;
- unsigned short    flags;  //COND, JMP, CALL, RET , etc
+ //unsigned short    flags;  //COND, JMP, CALL, RET , etc
  char              *mnemonic;
  Operand           operands[6];
  uint8_t           opcount; //number of operands in the instruction
@@ -107,6 +130,7 @@ typedef struct  {
   const char* instr_name;
   x86_insn mnem_id;
   uint8_t size;
+  InstrGroup grpid;
 } instr_map;
 
 #endif

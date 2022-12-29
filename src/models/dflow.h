@@ -3,7 +3,8 @@
 
 #include "../utils/ll.h"
 
-typedef enum  { 	
+typedef enum  { 
+        INV=0,	
         REG,
 		UNSIGNED, SIGNED,
 		NOTYPE, 
@@ -20,7 +21,7 @@ typedef struct  _symbol {
 
   ListElement      listElement; 
   char            *index1;
-  int             *index2;      
+  int              index2;      
   SYMTYPE          type;
   int              size;
   char             *name;
@@ -34,30 +35,7 @@ typedef struct  _symbol {
 
 } Symbol;
 
-/*
-typedef struct   {
-  ListElement      listElement;
-  char             *index;           
-  Symbol           *symbol;
 
-} GlobalSymbols;  //SymTab
-
-typedef struct   {
-  ListElement      listElement;
-  int              *index;           
-  Symbol           *symbol;
-
-} FuncSymbols;
-*/
-/*
-typedef struct   {
-  ListElement      listElement;          
-  SYMTYPE          retType;
-  char             *retValue;
-  List             funcsymbols;
-
-} FuncSymbols; //actRecord
-*/
 
 typedef struct   {
   ListElement      listElement;          
@@ -70,7 +48,7 @@ typedef struct   {
   int              maxPars;
   List             funcsymbols;
 
-} FuncSymTable;
+} FuncSymBlock;
 /*
 typedef struct   {
   ListElement      listElement;         
