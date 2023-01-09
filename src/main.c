@@ -1,8 +1,8 @@
 #include <stdio.h>
 #include "utils/ll.h"
 
-#define VERBOSE_PARSE true
-#define VERBOSE_CFG true
+#define VERBOSE_PARSE false
+#define VERBOSE_CFG false
 
 void parse_assembly(FILE* fpointer, List *funBlocks, List *stringBlocks);
 void print_blocks(List *Blocks);

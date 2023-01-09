@@ -21,8 +21,8 @@ typedef enum {
     OP_TYPE_SBR=7,     //stack base reg %ebp %rbp
     OP_TYPE_STR=8,     //stack top reg %esp %rsp
     OP_TYPE_SBP=9,     //stack base ptr (%ebp) (%rbp)
-    OP_TYPE_STP=10     //stack top ptr (%esp) (%rsp)
-  
+    OP_TYPE_STP=10,     //stack top ptr (%esp) (%rsp)
+    OP_TYPE_ARG=11
     } OperandType2;
 
 typedef enum  {
@@ -30,21 +30,28 @@ typedef enum  {
     INS_GRP_MOV=1, 
     INS_GRP_ADD=2, 
     INS_GRP_SUB=3, 
-    INS_GRP_MULT=4,
-    INS_GRP_CJMP=5,
-    INS_GRP_JMP=6,
-    INS_GRP_TEST=7,
-    INS_GRP_CSET=8,
-    INS_GRP_CALL=8,
-    INS_GRP_CMP=9 
+    INS_GRP_MULTU=4,
+    INS_GRP_MULT=5,
+    INS_GRP_DIVU=6,
+    INS_GRP_DIV=7,
+    INS_GRP_CJMP=8,
+    INS_GRP_JMP=9,
+    INS_GRP_TEST=10,
+    INS_GRP_CSET=11,
+    INS_GRP_CALL=12,
+    INS_GRP_CMP=13,
+    INS_GRP_LEA=14,
+    INS_GRP_INC=15,
+    INS_GRP_PUSH=16,
+    INS_GRP_POP=17
   } InstrGroup;
 
 typedef enum  { NOCOND, IF, IFELSE } CONDITIONAL;
 
 typedef struct {
  
-  char offset[10];
-  char scale[10];
+  int offset;
+  int scale;
 
 } X86ptr;
 

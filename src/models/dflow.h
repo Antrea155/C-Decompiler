@@ -2,6 +2,7 @@
 #define DECOMPILER_DFLOW_H
 
 #include "../utils/ll.h"
+#define MAX_PARMS 5
 
 typedef enum  { 
         INV=0,	
@@ -35,11 +36,35 @@ typedef struct  _symbol {
 
 } Symbol;
 
+/*
+typedef struct   {
+  ListElement      listElement;
+  char             *index;           
+  Symbol           *symbol;
 
+} GlobalSymbols;  //SymTab
+
+typedef struct   {
+  ListElement      listElement;
+  int              *index;           
+  Symbol           *symbol;
+
+} FuncSymbols;
+*/
+/*
+typedef struct   {
+  ListElement      listElement;          
+  SYMTYPE          retType;
+  char             *retValue;
+  List             funcsymbols;
+
+} FuncSymbols; //actRecord
+*/
 
 typedef struct   {
   ListElement      listElement;          
   char             *fname;   //func name
+  char             *parmtypes[MAX_PARMS]; //the parameter types of the function in the assembly listing
   SYMTYPE          retType;
   char             *retValue;
   int              maxLocalOffset;

@@ -13,6 +13,7 @@ edge [
 ];
 subgraph "main" {
 label = "main";
+node [style=filled,color=white]
 cluster=true;
 ".TL1"[
 label = "<f0>.TL1| <f1> pushq |<f2>"

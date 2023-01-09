@@ -17,21 +17,21 @@
 <!-- .TL1 -->
 <g id="node1" class="node">
 <title>.TL1</title>
-<polygon fill="none" stroke="black" points="16,-104.5 16,-173.5 72,-173.5 72,-104.5 16,-104.5"/>
+<polygon fill="white" stroke="white" points="16,-104.5 16,-173.5 72,-173.5 72,-104.5 16,-104.5"/>
 <text text-anchor="middle" x="44" y="-158.3" font-family="Helvetica,Arial,sans-serif" font-size="14.00">.TL1</text>
-<polyline fill="none" stroke="black" points="16,-150.5 72,-150.5"/>
+<polyline fill="none" stroke="white" points="16,-150.5 72,-150.5"/>
 <text text-anchor="middle" x="44" y="-135.3" font-family="Helvetica,Arial,sans-serif" font-size="14.00">pushq</text>
-<polyline fill="none" stroke="black" points="16,-127.5 72,-127.5"/>
+<polyline fill="none" stroke="white" points="16,-127.5 72,-127.5"/>
 <text text-anchor="middle" x="44" y="-112.3" font-family="Helvetica,Arial,sans-serif" font-size="14.00"> </text>
 </g>
 <!-- .L2 -->
 <g id="node2" class="node">
 <title>.L2</title>
-<polygon fill="none" stroke="black" points="108,-92.5 108,-161.5 162,-161.5 162,-92.5 108,-92.5"/>
+<polygon fill="white" stroke="white" points="108,-92.5 108,-161.5 162,-161.5 162,-92.5 108,-92.5"/>
 <text text-anchor="middle" x="135" y="-146.3" font-family="Helvetica,Arial,sans-serif" font-size="14.00">.L2</text>
-<polyline fill="none" stroke="black" points="108,-138.5 162,-138.5"/>
+<polyline fill="none" stroke="white" points="108,-138.5 162,-138.5"/>
 <text text-anchor="middle" x="135" y="-123.3" font-family="Helvetica,Arial,sans-serif" font-size="14.00">jbe</text>
-<polyline fill="none" stroke="black" points="108,-115.5 162,-115.5"/>
+<polyline fill="none" stroke="white" points="108,-115.5 162,-115.5"/>
 <text text-anchor="middle" x="135" y="-100.3" font-family="Helvetica,Arial,sans-serif" font-size="14.00"> </text>
 </g>
 <!-- .TL1&#45;&gt;.L2 -->
@@ -43,11 +43,11 @@
 <!-- .L3 -->
 <g id="node3" class="node">
 <title>.L3</title>
-<polygon fill="none" stroke="black" points="198,-104.5 198,-173.5 261,-173.5 261,-104.5 198,-104.5"/>
+<polygon fill="white" stroke="white" points="198,-104.5 198,-173.5 261,-173.5 261,-104.5 198,-104.5"/>
 <text text-anchor="middle" x="229.5" y="-158.3" font-family="Helvetica,Arial,sans-serif" font-size="14.00">.L3</text>
-<polyline fill="none" stroke="black" points="198,-150.5 261,-150.5"/>
+<polyline fill="none" stroke="white" points="198,-150.5 261,-150.5"/>
 <text text-anchor="middle" x="229.5" y="-135.3" font-family="Helvetica,Arial,sans-serif" font-size="14.00">movzwl</text>
-<polyline fill="none" stroke="black" points="198,-127.5 261,-127.5"/>
+<polyline fill="none" stroke="white" points="198,-127.5 261,-127.5"/>
 <text text-anchor="middle" x="229.5" y="-112.3" font-family="Helvetica,Arial,sans-serif" font-size="14.00"> </text>
 </g>
 <!-- .L2&#45;&gt;.L3 -->
@@ -59,11 +59,11 @@
 <!-- .TL2 -->
 <g id="node4" class="node">
 <title>.TL2</title>
-<polygon fill="none" stroke="black" points="202.5,-16.5 202.5,-85.5 256.5,-85.5 256.5,-16.5 202.5,-16.5"/>
+<polygon fill="white" stroke="white" points="202.5,-16.5 202.5,-85.5 256.5,-85.5 256.5,-16.5 202.5,-16.5"/>
 <text text-anchor="middle" x="229.5" y="-70.3" font-family="Helvetica,Arial,sans-serif" font-size="14.00">.TL2</text>
-<polyline fill="none" stroke="black" points="202.5,-62.5 256.5,-62.5"/>
+<polyline fill="none" stroke="white" points="202.5,-62.5 256.5,-62.5"/>
 <text text-anchor="middle" x="229.5" y="-47.3" font-family="Helvetica,Arial,sans-serif" font-size="14.00">movl</text>
-<polyline fill="none" stroke="black" points="202.5,-39.5 256.5,-39.5"/>
+<polyline fill="none" stroke="white" points="202.5,-39.5 256.5,-39.5"/>
 <text text-anchor="middle" x="229.5" y="-24.3" font-family="Helvetica,Arial,sans-serif" font-size="14.00"> </text>
 </g>
 <!-- .L2&#45;&gt;.TL2 -->

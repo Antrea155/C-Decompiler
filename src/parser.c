@@ -49,7 +49,7 @@ void print_instructions(List *Instructions) {
            if (ins->operands[i].type1 == OP_TYPE_IMM)
            printf("                imm value-> %s\n",ins->operands[i].value.imm);
            if (ins->operands[i].type1 == OP_TYPE_PTR) {
-           printf("                offset   -> %s\n",ins->operands[i].ptr.offset);
+           printf("                offset   -> %d\n",ins->operands[i].ptr.offset);
            printf("                type2    -> %d\n",ins->operands[i].type2);
            }
       }
@@ -66,8 +66,8 @@ void print_func_block(FuncBlock *funcBlockp){
 
      BasicBlock *block = (BasicBlock *)List_getNextElement(funcBBlistP);
      printf("   basic block with label -> %s\n",block->label);
-     printf("      leftOp -> %s\n",block->leftOp);
-     printf("      rightOp -> %s\n",block->rightOp);
+    // printf("      leftOp -> %s\n",block->leftOp);
+    // printf("      rightOp -> %s\n",block->rightOp);
      printf("      cmpOperator-> %s\n",block->compOperator);
      printf("      thenLabel-> %s\n",block->thenLabel);
      printf("      elseLabel-> %s\n",block->elseLabel);
@@ -172,8 +172,10 @@ void process_operand(char *op_string, Operand *op) {
         //operand is of the form %reg
         op->type1 = OP_TYPE_REG;
         strcpy(op->value.reg, op_string);
-        if (!strcmp(op_string, "%ebp") || !strcmp(op_string,"%rbp")) op->type2 = OP_TYPE_SBR; //stack base reg
-        if (!strcmp(op_string, "%esp") || !strcmp(op_string,"%rsp")) op->type2 = OP_TYPE_STR; //stack top reg
+        if (!strcmp(op_string+2, "bp"))  op->type2 = OP_TYPE_SBR; //stack base reg
+        if (!strcmp(op_string+2, "sp"))  op->type2 = OP_TYPE_STR; //stack top reg
+        if ((!strcmp(op_string+2, "di")) || (!strcmp(op_string+2, "si")) || (!strcmp(op_string, "dx"))
+          || (!strcmp(op_string+2, "cx")) ) op->type2 = OP_TYPE_ARG;  //used as args to functions
        
 
     } else if ( (firstpos=strchr(op_string ,'(')) && (strchr(firstpos+1,')')) ) {
@@ -188,12 +190,11 @@ void process_operand(char *op_string, Operand *op) {
         op->value.reg[strlen(op->value.reg)-1] = 0; //remove ) from reg name
         strncpy(offsets, op_string, strlen(op_string) - strlen(firstpos));
  
-        if (strlen(offsets)) strcpy(op->ptr.offset, offsets); 
-        if ((!strcmp(op->value.reg, "%ebp") || !strcmp(op->value.reg,"%rbp")))
-          op->type2 = OP_TYPE_SBP; 
-        if (!strcmp(op->value.reg, "%esp") || !strcmp(op->value.reg,"%rsp"))
-          op->type2 = OP_TYPE_STP; //pointer to top of stack
-      
+        //if (strlen(offsets)) strcpy(op->ptr.offset, offsets); 
+        if (strlen(offsets)) op->ptr.offset = atoi(offsets); 
+        if (!strcmp(op->value.reg+2, "bp"))  op->type2 = OP_TYPE_SBP; 
+        if (!strcmp(op->value.reg+2, "sp"))  op->type2 = OP_TYPE_STP; //pointer to top of stack
+        
 
     } else if (op_string[0] == '.') {
         //for example jbe .L3 operand is .L3
@@ -218,7 +219,7 @@ int process_instruction(char *inst, Instruction **instP) {
     instructionP = (Instruction *)calloc(1,sizeof(Instruction));
     
 
-    currentWord = strtok(inst, " ");        //tokenise instruction with space char
+    currentWord = strtok(inst, " \t");        //tokenise instruction with space char
     int index = 0;
     /*Run over instruction line (word-by-word)*/
     while (currentWord != NULL)
@@ -265,7 +266,7 @@ int process_instruction(char *inst, Instruction **instP) {
 
             index++;
            
-            currentWord = strtok(NULL, " ");
+            currentWord = strtok(NULL, " \t");
             //continue;
     }
     
@@ -404,7 +405,7 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
                 if(!seen_unc_jump) basicblockP->thenLabel = strdup(currentLine);
                 seen_unc_jump=false;
                  //create a new basic block for the instructions of the current label
-                basicblockP = (BasicBlock *)malloc(sizeof(BasicBlock)); //creating memory space
+                basicblockP = (BasicBlock *)calloc(1,sizeof(BasicBlock)); //creating memory space
                 basicblockP->label =strdup(currentLine);
                 //add current basic block to the func basic blocks list
                 List_pushElement_back( &(funcblockP->funcBBlist), basicblockP); 
@@ -434,15 +435,16 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
 
            //pop the last instruction from current basic block. this must be the compare instruction before the
            //existing cond jump instruction
+           /*
            instp = (Instruction *)List_popElement_last(&(basicblockP->Instructions));
         
             basicblockP->leftOp = strdup(instp->operands[0].op_string);
             if (instp->opcount==2)
                basicblockP->rightOp = strdup(instp->operands[1].op_string);
-            
+            */
 
               //create a new basic block for the else instructions 
-            basicblockP = (BasicBlock *)malloc(sizeof(BasicBlock)); //creating memory space
+            basicblockP = (BasicBlock *)calloc(1,sizeof(BasicBlock)); //creating memory space
             basicblockP->label = templabel;
               
             //add the new basic block to the func basic blocks list

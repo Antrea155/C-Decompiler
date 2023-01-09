@@ -39,6 +39,18 @@ typedef enum x86_insn {
   imulw,
   imull,
   imulq,
+  divb, //divide unsigned
+  divw,
+  divl,
+  divq,
+  idivb, //divide signed
+  idivw,
+  idivl,
+  idivq,
+  incb, 
+  incw,
+  incl,
+  incq,
   cmpb,
   cmpw,
   cmpl,
@@ -104,6 +116,7 @@ typedef enum x86_insn {
   jpo,
   js,
   jz,
+  leal,
   int3,
   ud2
 } x86_insn;
