@@ -8,6 +8,8 @@
 #include "models/assembly.h"
 #include "models/dflow.h"
 
+extern bool is64bits;
+
 List *stack;
 #define push( listElement ) _List_pushElement( stack, (ListElement *)(listElement) )
 #define pop()  (Symbol *)List_popElement( stack )
@@ -152,7 +154,7 @@ void add_symbol(Symbol *sym) {
 
 void init_REGS_symbs() {
 
-    add_REGsymbol("%eax", 4);
+    add_REGsymbol("%eax", 4 );
     add_REGsymbol("%ebx", 4 );
     add_REGsymbol("%ecx", 4 );
     add_REGsymbol("%edx", 4 );
@@ -304,7 +306,7 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
        symbol = pop();
        strcat(temp,symbol->value); strcat(temp,")");
 
-       reg = get_symbAt("%eax",0);
+       reg = (is64bits) ? get_symbAt("%rax",0): get_symbAt("%eax",0);
        reg->value = strdup(temp);
        printf("call->%s\n",reg->value);
        //TODO before pop save in callees funcsymblock
@@ -312,8 +314,13 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
 
    } else if (insGrpId == INS_GRP_MOV) {
      if ((op1type1 == OP_TYPE_REG) && (op2type1 == OP_TYPE_REG)) {
-        reg = get_symbAt(ins->operands[0].value.reg,0);
-        upd_symbAt(ins->operands[1].value.reg,0,reg);
+        if ((op2type2 == OP_TYPE_ARG) && (ins->size != 8)) { //x86-64 places pars for callee in edi, esi,..
+          reg = cpy_sym(get_symbAt(ins->operands[0].value.reg,0));
+          push(reg); printf("pushed in stack\n");
+        } else {
+          reg = get_symbAt(ins->operands[0].value.reg,0);
+          upd_symbAt(ins->operands[1].value.reg,0,reg);
+        }
         
      } else if ((op1type1 == OP_TYPE_REG) && (op2type2 == OP_TYPE_LABEL)) {
 
@@ -332,7 +339,10 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
         var = get_symbAt(0,ins->operands[1].ptr.offset);
         var->reference = reg->reference;
         //in x86-64 linux edi, esi, edx, ecx are used to stored passed parameters to a function. change var name to par_
-        if (op1type2 == OP_TYPE_ARG) var->name = genUniqName(abs(ins->operands[1].ptr.offset));
+        if (op1type2 == OP_TYPE_ARG) {
+            var->name = genUniqName(abs(ins->operands[1].ptr.offset));
+            var->value = strdup(var->name);
+        }
         printf("Ins2->%s = %s;\n",var->name,reg->value);
 
      } else if ((op1type1 == OP_TYPE_REG) && (op2type2 == OP_TYPE_SBP)) {
@@ -341,6 +351,16 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
         printf("Ins->%s = %s;\n",var->name,reg->value);
 
      }
+
+   } else if (insGrpId == INS_GRP_ADD) {
+       if ((op1type2 == OP_TYPE_NUM) && (op2type2 == OP_TYPE_SBP)) {
+         var = get_symbAt(0,ins->operands[1].ptr.offset);
+         printf("Ins->%s+= %s;\n",var->name,ins->operands[0].value.imm);
+       } else if ((op1type1 == OP_TYPE_REG) && (op2type2 == OP_TYPE_SBP)) {
+         reg = get_symbAt(ins->operands[0].value.reg,0);
+         var = get_symbAt(0,ins->operands[1].ptr.offset);
+         printf("Ins->%s+= %s;\n",var->name,reg->value);
+       }
 
    } else if (insGrpId == INS_GRP_SUB) {
        if ((op1type2 == OP_TYPE_NUM) && (op2type2 == OP_TYPE_STR)) {
@@ -382,17 +402,17 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
     
         if (op1type1 == OP_TYPE_REG)  { 
          reg = get_symbAt(ins->operands[0].value.reg,0);
-         var = get_symbAt("%edx",0);
-         symbol = get_symbAt("%eax",0);
+         reg2 = (ins->size == 8 ) ? get_symbAt("%rdx",0) : get_symbAt("%edx",0);
+         symbol = (ins->size == 8 ) ? get_symbAt("%rax",0) : get_symbAt("%eax",0);
          sprintf(temp,"(%s)%%%s",symbol->value,reg->value);
-         var->value = strdup(temp);
-         printf("edx->%s\n",var->value);
+         reg2->value = strdup(temp);
+         (ins->size == 8 ) ? printf("rdx->%s\n",reg2->value) : printf("edx->%s\n",reg2->value);
          sprintf(temp,"(%s)/%s",symbol->value,reg->value);
          symbol->value = strdup(temp);
-         printf("eax->%s\n",symbol->value);
+         (ins->size == 8 ) ? printf("rax->%s\n",symbol->value) : printf("eax->%s\n",symbol->value);
 
       } else if (op1type2 == OP_TYPE_SBP)  {
-         reg = get_symbAt("%eax",0); //TODO what if rax is used
+         reg = (is64bits) ? get_symbAt("%rax",0) : get_symbAt("%eax",0); //TODO what if rax is used
          var = get_symbAt(ins->operands[0].value.reg,0);
          sprintf(temp,"(%s)/%s",reg->value,var->name);
          //TODO change edx value
@@ -413,7 +433,8 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
         symbol = get_symbAt(ins->operands[0].value.reg,0)->reference;
         printf("ins->++%s;\n",symbol->name);
       }
-   }
+   } else
+     printf("  ->>instruction not analyzed<<---\n");
 
 }
 
@@ -463,7 +484,8 @@ void data_flow(List *funcBlocks, List *stringBlocks) {
           BasicBlock *bb = (BasicBlock *)List_getNextElement(BBlist);
           List *instructions = &(bb->Instructions);
           List_reset(instructions);
-     
+          printf("\nanalyzing basic block->%s\n",bb->label);
+
           for (int i = 0; i < instructions->numItems; i++) {
 
              Instruction *inst = (Instruction *)List_getNextElement(instructions);

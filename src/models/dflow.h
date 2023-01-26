@@ -5,8 +5,8 @@
 #define MAX_PARMS 5
 
 typedef enum  { 
-        INV=0,	
-        REG,
+    INV=0,	
+    REG,
 		UNSIGNED, SIGNED,
 		NOTYPE, 
 		CHAR, BYTE,
@@ -15,7 +15,7 @@ typedef enum  {
 		DOUBLE,
 		LDOUBLE,
 		STRING,
-        FUNC
+    FUNC
 	} SYMTYPE;
 
 typedef struct  _symbol {
