@@ -12,6 +12,7 @@ void display_successors(List *funcblocks);
 void display_predecessors(List *funcBlocksP);
 void generate_cfg_dot_images(List *funcblocks);
 void data_flow(List *funcBlocks, List *stringBlocks);
+bool is64bits = false; //turns register conversion on and off
 
 int main(int argc, char* argv[]) {  // argc is the number of inputs thats entered in the commandline
                                     // argv is an array that holds those values

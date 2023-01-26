@@ -193,7 +193,7 @@ void display_successors(List *funcblocks) {
       
     }
    
-    }
+ }
 
 void display_predecessors(List *funcblocks) {
 

@@ -15,6 +15,8 @@ int glob_veriable = 2;
 extern const instr_map instr_table[];
 extern int instr_table_length;
 
+extern bool is64bits;
+
 void trim(char * s) {      
     //remove trailing and leading spaces
     //TODO remove spaces between brackets
@@ -121,6 +123,10 @@ char *get_temp_label() {
 
 }
 
+char *convertTo64reg(char *reg) {
+  if (!strncmp(reg,"%eax",4)) {printf("converted to rax\n");return("%rax");}
+  else return reg;
+}
 
 int process_instruction_details(Instruction *ins) {
 
@@ -171,11 +177,12 @@ void process_operand(char *op_string, Operand *op) {
     } else if (op_string[0] == '%') {
         //operand is of the form %reg
         op->type1 = OP_TYPE_REG;
-        strcpy(op->value.reg, op_string);
+        if (is64bits) strcpy(op->value.reg, convertTo64reg(op_string));
+        else strcpy(op->value.reg, op_string);
         if (!strcmp(op_string+2, "bp"))  op->type2 = OP_TYPE_SBR; //stack base reg
         if (!strcmp(op_string+2, "sp"))  op->type2 = OP_TYPE_STR; //stack top reg
-        if ((!strcmp(op_string+2, "di")) || (!strcmp(op_string+2, "si")) || (!strcmp(op_string, "dx"))
-          || (!strcmp(op_string+2, "cx")) ) op->type2 = OP_TYPE_ARG;  //used as args to functions
+        if ((!strcmp(op_string+2, "di")) || (!strcmp(op_string+2, "si")) /* || (!strcmp(op_string, "dx"))
+          || (!strcmp(op_string+2, "cx"))*/ ) op->type2 = OP_TYPE_ARG;  //used as args to functions
        
 
     } else if ( (firstpos=strchr(op_string ,'(')) && (strchr(firstpos+1,')')) ) {
@@ -363,9 +370,12 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
                 //trim(currentLine);
 
                 currentLine[strlen(currentLine)-1]=0; 
-                stringblockP->string = strdup(strchr(strstr(currentLine,".string"), ' '));
-                if (stringblockP->string) printf("found string label %s with string ->%s\n",stringblockP->label,stringblockP->string);
-                else printf("string for label %s not found\n", stringblockP->label);
+                stringblockP->string = strdup(strchr(strstr(currentLine,".string"), ' ')); //saves the actual string
+                if (stringblockP->string) 
+                  printf("found string label %s with string ->%s\n",stringblockP->label,stringblockP->string);
+                else 
+                  printf("string for label %s not found\n", stringblockP->label);
+
                 // add new string block to the list
                 List_pushElement_back( stringBlocks, stringblockP); 
 
@@ -376,12 +386,12 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
 
                 printf("start of new function found-> %s\n",currentLine);
                    
-                 //create a new func block 
+                //create a new func block 
                 funcblockP = (FuncBlock *)calloc(1,sizeof(FuncBlock)); //creating memory space
                 funcblockP->funcName = strdup(currentLine);
 
                 
-               //add current func block to the func blocks list
+                //add current func block to the func blocks list
                 List_pushElement_back( funcBlocks, funcblockP); 
                 
                 //create a list to hold the basic blocks of the new function
@@ -389,10 +399,10 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
                 
                 //create a new basic block for the instructions just after the function definition
                 basicblockP = (BasicBlock *)calloc(1,sizeof(BasicBlock)); //creating memory space
-                basicblockP->label = get_temp_label();
+                basicblockP->label = get_temp_label(); // .TLx
                 //add current basic block to the func basic blocks list
                 List_pushElement_back( &(funcblockP->funcBBlist), basicblockP); 
-                 //create a list to hold the instructions in the basic block
+                //create a list to hold the instructions in the basic block
                 List_new(&(basicblockP->Instructions));
                 List_new(&(basicblockP->Predecessors));
                 // go and get the instructions of the current basic block
@@ -404,12 +414,12 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
                 // the current bb will flow through to this new bb unless there was a jmp instr at the end of this bb
                 if(!seen_unc_jump) basicblockP->thenLabel = strdup(currentLine);
                 seen_unc_jump=false;
-                 //create a new basic block for the instructions of the current label
+                //create a new basic block for the instructions of the current label
                 basicblockP = (BasicBlock *)calloc(1,sizeof(BasicBlock)); //creating memory space
                 basicblockP->label =strdup(currentLine);
                 //add current basic block to the func basic blocks list
                 List_pushElement_back( &(funcblockP->funcBBlist), basicblockP); 
-                 //create a list to hold the instructions in the basic block
+                //create a list to hold the instructions in the basic block
                 List_new(&(basicblockP->Instructions));
                 List_new(&(basicblockP->Predecessors));
                 // go and get the instructions of the current basic block
@@ -443,13 +453,13 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
                basicblockP->rightOp = strdup(instp->operands[1].op_string);
             */
 
-              //create a new basic block for the else instructions 
+            //create a new basic block for the else instructions 
             basicblockP = (BasicBlock *)calloc(1,sizeof(BasicBlock)); //creating memory space
             basicblockP->label = templabel;
               
             //add the new basic block to the func basic blocks list
             List_pushElement_back( &(funcblockP->funcBBlist), basicblockP); 
-              //create a list to hold the instructions in the basic block
+            //create a list to hold the instructions in the basic block
             List_new(&(basicblockP->Instructions));
             List_new(&(basicblockP->Predecessors));
 
