@@ -1,8 +1,9 @@
 #include <stdio.h>
 #include "utils/ll.h"
 
-#define VERBOSE_PARSE false
-#define VERBOSE_CFG false
+#define VERBOSE_PARSE true
+#define VERBOSE_CFG true
+#define VERBOSE_DF true
 
 void parse_assembly(FILE* fpointer, List *funBlocks, List *stringBlocks);
 void print_blocks(List *Blocks);
@@ -12,7 +13,8 @@ void display_successors(List *funcblocks);
 void display_predecessors(List *funcBlocksP);
 void generate_cfg_dot_images(List *funcblocks);
 void data_flow(List *funcBlocks, List *stringBlocks);
-bool is64bits = false; //turns register conversion on and off
+void display_dfins(List *funcBlocks);
+bool is64bits = true;
 
 int main(int argc, char* argv[]) {  // argc is the number of inputs thats entered in the commandline
                                     // argv is an array that holds those values
@@ -37,7 +39,7 @@ int main(int argc, char* argv[]) {  // argc is the number of inputs thats entere
     fPointer = fopen(argv[1], "r+"); //opens the assembly file which is stored in argv[1]
 	
 
-    rewind(fPointer); 
+    rewind(fPointer); //sets the file position to the beginning of the file of the given stream.
     parse_assembly(fPointer, funcBlocksP, stringBlocksP);   
     fclose(fPointer);
 
@@ -58,4 +60,7 @@ int main(int argc, char* argv[]) {  // argc is the number of inputs thats entere
     }
 
     data_flow(funcBlocksP, stringBlocksP);
+    if (VERBOSE_DF) {
+      display_dfins(funcBlocksP);
+    }
 }

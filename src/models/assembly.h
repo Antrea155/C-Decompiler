@@ -25,6 +25,7 @@ typedef enum {
     OP_TYPE_ARG=11
     } OperandType2;
 
+
 typedef enum  {
     INS_GRP_NONE=0,
     INS_GRP_MOV=1, 
@@ -104,6 +105,7 @@ typedef struct _basicBlock {
   bool                     visited;	
   List                     Predecessors;      //List of Predecessors
   List                     Instructions;        //List of Instructions
+  List                     ClikeInsL;        //List of C like Instructions
   
 } BasicBlock;
 
@@ -114,6 +116,12 @@ typedef struct {
   BasicBlock       *bbptr;
 
 } Predecessor;
+
+typedef struct {
+  ListElement      listElement;
+  char             *cins;
+
+} ClikeIns;
 
 typedef struct {
   ListElement      listElement;

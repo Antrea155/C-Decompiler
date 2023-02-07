@@ -117,6 +117,7 @@ typedef enum x86_insn {
   js,
   jz,
   leal,
+  leaq,
   int3,
   ud2
 } x86_insn;

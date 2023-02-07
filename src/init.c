@@ -116,6 +116,7 @@ const instr_map instr_table[] = {
   {"js", js,0, INS_GRP_CJMP},
   {"jz", jz,0, INS_GRP_CJMP},
   {"leal", leal,0, INS_GRP_LEA},
+  {"leaq", leaq,0, INS_GRP_LEA},
   {"int", int3,0},
   {"ud2", ud2,0}
 };
