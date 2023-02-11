@@ -115,10 +115,10 @@ char *get_temp_label() {
   char buf[3], tl[8];
 
     index++;
-    itoa(index,buf,10); //convert int(base10) index to string and store it indo buff
+    itoa(index,buf,10);
     strcpy(tl,".TL");
 
-    strcat(tl,buf); //append buf string to tl
+    strcat(tl,buf);
   return strdup(tl);
 
 }
@@ -180,32 +180,24 @@ void process_operand(char *op_string, Operand *op) {
 
     //determine if operand is Immediate, Register or Memory (pointer to a memory location)
     if (op_string[0] == '$') {
-      //operand is of the form $x or $.LCx
+        //operand is of the form $x or $.LCx
       op->type1 = OP_TYPE_IMM;
       strcpy(op->value.imm, op_string+1);  
-      if (op_string[1] == '.') 
-        op->type2 = OP_TYPE_LABEL; 
-      else 
-        op->type2 = OP_TYPE_NUM;
+      if (op_string[1] == '.') op->type2 = OP_TYPE_LABEL; else op->type2 = OP_TYPE_NUM;
 
     } else if (op_string[0] == '%') {
         //operand is of the form %reg
         op->type1 = OP_TYPE_REG;
-        if (strlen(op_string)<4) 
-          op_string = strdup(convertTo4(op_string)); //if %ax -> %eax
-        if (is64bits) 
-          strcpy(op->value.reg, convertTo64reg(op_string));
-        else 
-          strcpy(op->value.reg, op_string);
-        if (!strcmp(op_string+2, "bp"))  
-          op->type2 = OP_TYPE_SBR; //stack base reg
-        if (!strcmp(op_string+2, "sp"))  
-          op->type2 = OP_TYPE_STR; //stack top reg
-        if (is64bits) { 
-          if ((!strcmp(op_string+2, "di")) || (!strcmp(op_string+2, "si")))
-            op->type2 = OP_TYPE_ARG; } //x86-64 used as args to functions
+        if (strlen(op_string)<4) op_string = strdup(convertTo4(op_string));
+        if (is64bits) strcpy(op->value.reg, convertTo64reg(op_string));
+        else strcpy(op->value.reg, op_string);
+        if (!strcmp(op_string+2, "bp"))  op->type2 = OP_TYPE_SBR; //stack base reg
+        if (!strcmp(op_string+2, "sp"))  op->type2 = OP_TYPE_STR; //stack top reg
+        if (is64bits) { if ((!strcmp(op_string+2, "di")) || (!strcmp(op_string+2, "si")) /* || (!strcmp(op_string+2, "dx")) 
+          || (!strcmp(op_string+2, "cx"))*/ ) op->type2 = OP_TYPE_ARG; } //x86-64 used as args to functions
        
-   } else if ( (firstpos=strchr(op_string ,'(')) && (strchr(firstpos+1,')')) ) { 
+
+    } else if ( (firstpos=strchr(op_string ,'(')) && (strchr(firstpos+1,')')) ) {
         //operand is of the form (%reg) or offset(%reg) where %reg is the base reg  -> reg+offset 
         //TODO it can also be segment:offset(%reg1,$reg2,scale)  or offset(base,index,scale) -> base+index*scale+offset
         // don't handle segment
@@ -213,8 +205,8 @@ void process_operand(char *op_string, Operand *op) {
         // scale is optional. defualt is 1
         // base is optional eg offset(,index,scale)
         op->type1 = OP_TYPE_PTR;
-        strcpy(op->value.reg, firstpos+1); // firstpos = %
-        op->value.reg[strlen(op->value.reg)-1] = 0; //remove ')' from reg name
+        strcpy(op->value.reg, firstpos+1);
+        op->value.reg[strlen(op->value.reg)-1] = 0; //remove ) from reg name
         strncpy(offsets, op_string, strlen(op_string) - strlen(firstpos));
  
         //if (strlen(offsets)) strcpy(op->ptr.offset, offsets); 
@@ -388,13 +380,12 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
                 
                 //get next line where the string constant exists
                 fgets(currentLine, MAX_CHARS_IN_LINE, fpointer); 
+                //trim(currentLine);
+
                 currentLine[strlen(currentLine)-1]=0; 
                 stringblockP->string = strdup(strchr(strstr(currentLine,".string"), ' ')+1);
-                if (stringblockP->string) 
-                  printf("found string label %s with string ->%s\n",stringblockP->label,stringblockP->string);
-                else 
-                  printf("string for label %s not found\n", stringblockP->label);
-
+                if (stringblockP->string) printf("found string label %s with string ->%s\n",stringblockP->label,stringblockP->string);
+                else printf("string for label %s not found\n", stringblockP->label);
                 // add new string block to the list
                 List_pushElement_back( stringBlocks, stringblockP); 
 
@@ -405,11 +396,12 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
 
                 printf("start of new function found-> %s\n",currentLine);
                    
-                //create a new func block 
+                 //create a new func block 
                 funcblockP = (FuncBlock *)calloc(1,sizeof(FuncBlock)); //creating memory space
                 funcblockP->funcName = strdup(currentLine);
 
-                //add current func block to the func blocks list
+                
+               //add current func block to the func blocks list
                 List_pushElement_back( funcBlocks, funcblockP); 
                 
                 //create a list to hold the basic blocks of the new function
@@ -418,11 +410,9 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
                 //create a new basic block for the instructions just after the function definition
                 basicblockP = (BasicBlock *)calloc(1,sizeof(BasicBlock)); //creating memory space
                 basicblockP->label = get_temp_label();
-
                 //add current basic block to the func basic blocks list
                 List_pushElement_back( &(funcblockP->funcBBlist), basicblockP); 
-
-                //create a list to hold the instructions in the basic block
+                 //create a list to hold the instructions in the basic block
                 List_new(&(basicblockP->Instructions));
                 List_new(&(basicblockP->Predecessors));
                 // go and get the instructions of the current basic block
@@ -431,24 +421,17 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
             } else if (currentLine[0]=='.') {  //a label within a function is found
                
                 printf("a label within the current function found-> %s\n",currentLine);
-
                 // the current bb will flow through to this new bb unless there was a jmp instr at the end of this bb
-                if(!seen_unc_jump) 
-                  basicblockP->thenLabel = strdup(currentLine);
-
+                if(!seen_unc_jump) basicblockP->thenLabel = strdup(currentLine);
                 seen_unc_jump=false;
-
-                //create a new basic block for the instructions of the current label
+                 //create a new basic block for the instructions of the current label
                 basicblockP = (BasicBlock *)calloc(1,sizeof(BasicBlock)); //creating memory space
                 basicblockP->label =strdup(currentLine);
-
                 //add current basic block to the func basic blocks list
                 List_pushElement_back( &(funcblockP->funcBBlist), basicblockP); 
-
-                //create a list to hold the instructions in the basic block
+                 //create a list to hold the instructions in the basic block
                 List_new(&(basicblockP->Instructions));
                 List_new(&(basicblockP->Predecessors));
-
                 // go and get the instructions of the current basic block
                 continue;
             } 
@@ -460,8 +443,9 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
          // instp will have a pointer to a new instruction block after processing
          if (!process_instruction(currentLine, &instp)) continue;  //skip the instruction if something went wrong
 
-         if (instp->grpid == INS_GRP_CJMP ) { //for example-> jle .L2
+         if (instp->grpid == INS_GRP_CJMP ) {
 
+           //for example-> jle .L2
            printf("processing conditional jump instruction->%s\n",instp->mnemonic);
            basicblockP->thenLabel = strdup(instp->operands[0].op_string);  //etc .L2
            // create a temp label for else instructions bb to be created
@@ -479,13 +463,13 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
                basicblockP->rightOp = strdup(instp->operands[1].op_string);
             */
 
-            //create a new basic block for the else instructions 
+              //create a new basic block for the else instructions 
             basicblockP = (BasicBlock *)calloc(1,sizeof(BasicBlock)); //creating memory space
             basicblockP->label = templabel;
               
             //add the new basic block to the func basic blocks list
             List_pushElement_back( &(funcblockP->funcBBlist), basicblockP); 
-            //create a list to hold the instructions in the basic block
+              //create a list to hold the instructions in the basic block
             List_new(&(basicblockP->Instructions));
             List_new(&(basicblockP->Predecessors));
 

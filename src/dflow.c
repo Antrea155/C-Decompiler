@@ -8,6 +8,7 @@
 #include "models/assembly.h"
 #include "models/dflow.h"
 
+void display_symbols(void);
 extern bool is64bits;
 
 List *stack;
@@ -42,37 +43,6 @@ char  *genUniqName( int offset )
     }
     //printf("uniq->%s\n",name);
 	return name;
-}
-
-void display_symbols() {
-
-      ListElement *current = globalSymbols->current;
-      List_reset(globalSymbols);     //point to the first block
-    
-      printf("GLOBAL symbols\n");
-      for (int i = 0; i < globalSymbols->numItems; i++)  {
-
-        Symbol *sym = (Symbol *)List_getNextElement(globalSymbols);
-        printf("index1->%s\n",sym->index1);
-        if (sym->name) printf("     name->%s\n",sym->name);
-        if (sym->value) printf("    value->%s\n",sym->value);
-      }
-
-       globalSymbols->current = current;
-       
-       current = curFuncSymbs->current;
-       List_reset(curFuncSymbs);     //point to the first block
-       printf("CURRENT FUNC  symbols\n");
-       for (int i = 0; i < curFuncSymbs->numItems; i++)  {
-
-        Symbol *sym = (Symbol *)List_getNextElement(curFuncSymbs);
-        printf("index2->%d\n",sym->index2);
-        if (sym->name) printf("     name->%s\n",sym->name);
-        if (sym->value) printf("    value->%s\n",sym->value);
-      }
-
-      curFuncSymbs->current = current;
-
 }
 
 void handle_pars(char *funcName, FuncSymBlock *fsb) {
@@ -351,7 +321,7 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
    } else if (insGrpId == INS_GRP_CALL) {
 
         memset(temp,0,30);
-        //reconstructing call instr
+                //reconstructing call instr
         strcpy(temp,ins->operands[0].op_string);
         strcat(temp,"(");
 
@@ -596,8 +566,8 @@ void data_flow(List *funcBlocks, List *stringBlocks) {
        
        seenOnce = false;
        FuncSymBlock *funcSymBlock = (FuncSymBlock *)calloc(1, sizeof(FuncSymBlock));
-
        //remove pars from funcname and add them to the FuncSymblock in an array of 5
+      
        handle_pars(funcblock->funcName,funcSymBlock); 
        
        printf("\n\ndata flow analysis for function -> %s\n",funcSymBlock->fname);
@@ -637,32 +607,11 @@ void data_flow(List *funcBlocks, List *stringBlocks) {
 
      }
 
-   
   
-   /*
-    Symbol *sym = (Symbol *)calloc(1,sizeof(Symbol));
-    sym->name  = strdup("symbname");
-    push(sym);  printf("stck size->%d\n", stack->numItems);
-    sym=pop();  printf("stck size->%d\n", stack->numItems);
-    printf("pop->%s\n", sym->name);
-
-    sym= get_symbAt("%rax",0);
-    printf("symbat->%s\n",sym->name);
-
-    Symbol *sym2 = (Symbol *)calloc(1,sizeof(Symbol));
-    sym2->name = strdup("newname");
-    upd_symbAt("%rax",0,sym2);
-    sym= get_symbAt(0,0);
-    printf("symbat->%s\n",sym->name);
-   */
 
 
 }
-/*
-int main() {
-   // int glob_veriable=2;
-    data_flow(NULL, NULL);
-}*/
+
 
  void display_dfins(List *funcblocks) {
 
@@ -690,7 +639,8 @@ int main() {
                printf("%s ",cins->cins);
             }
             
-        printf("\n");
+            printf("\n leftOp->%s\n",bb->leftOp);
+            printf(" rightOp->%s\n\n",bb->rightOp);
       
 
         }
@@ -698,3 +648,34 @@ int main() {
     }
    
     }
+
+    void display_symbols() {
+
+      ListElement *current = globalSymbols->current;
+      List_reset(globalSymbols);     //point to the first block
+    
+      printf("GLOBAL symbols\n");
+      for (int i = 0; i < globalSymbols->numItems; i++)  {
+
+        Symbol *sym = (Symbol *)List_getNextElement(globalSymbols);
+        printf("index1->%s\n",sym->index1);
+        if (sym->name) printf("     name->%s\n",sym->name);
+        if (sym->value) printf("    value->%s\n",sym->value);
+      }
+
+       globalSymbols->current = current;
+       
+       current = curFuncSymbs->current;
+       List_reset(curFuncSymbs);     //point to the first block
+       printf("CURRENT FUNC  symbols\n");
+       for (int i = 0; i < curFuncSymbs->numItems; i++)  {
+
+        Symbol *sym = (Symbol *)List_getNextElement(curFuncSymbs);
+        printf("index2->%d\n",sym->index2);
+        if (sym->name) printf("     name->%s\n",sym->name);
+        if (sym->value) printf("    value->%s\n",sym->value);
+      }
+
+      curFuncSymbs->current = current;
+
+}

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "utils/ll.h"
 
-#define VERBOSE_PARSE true
+#define VERBOSE_PARSE false
 #define VERBOSE_CFG true
 #define VERBOSE_DF true
 
@@ -14,7 +14,9 @@ void display_predecessors(List *funcBlocksP);
 void generate_cfg_dot_images(List *funcblocks);
 void data_flow(List *funcBlocks, List *stringBlocks);
 void display_dfins(List *funcBlocks);
-bool is64bits = true;
+void control_flow(List *funcBlocks);
+void display_BBs_seq(List *funcBlocks);
+bool is64bits = false;
 
 int main(int argc, char* argv[]) {  // argc is the number of inputs thats entered in the commandline
                                     // argv is an array that holds those values
@@ -39,7 +41,7 @@ int main(int argc, char* argv[]) {  // argc is the number of inputs thats entere
     fPointer = fopen(argv[1], "r+"); //opens the assembly file which is stored in argv[1]
 	
 
-    rewind(fPointer); //sets the file position to the beginning of the file of the given stream.
+    rewind(fPointer); 
     parse_assembly(fPointer, funcBlocksP, stringBlocksP);   
     fclose(fPointer);
 
@@ -63,4 +65,7 @@ int main(int argc, char* argv[]) {  // argc is the number of inputs thats entere
     if (VERBOSE_DF) {
       display_dfins(funcBlocksP);
     }
+
+    control_flow(funcBlocksP);
+    display_BBs_seq(funcBlocksP);
 }

@@ -25,7 +25,6 @@ typedef enum {
     OP_TYPE_ARG=11
     } OperandType2;
 
-
 typedef enum  {
     INS_GRP_NONE=0,
     INS_GRP_MOV=1, 
@@ -102,6 +101,8 @@ typedef struct _basicBlock {
   char                     *rightOp;
   char                     *compOperator;
   CONDITIONAL              condtype;
+  int                      pos;              //position in cfg tree
+  struct _basicBlock       *head; //head node of the interval it belongs to
   bool                     visited;	
   List                     Predecessors;      //List of Predecessors
   List                     Instructions;        //List of Instructions

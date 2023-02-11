@@ -81,7 +81,6 @@ void create_CFG(List *funcblocks) {
                 List_pushElement_back(predecessors,bbptr);
             }
              targetBlock=0;
-
             if (bb->elseLabel ) {
                 
                 ListElement *current = BBlist->current;  //save current pointer
@@ -120,7 +119,7 @@ void create_CFG(List *funcblocks) {
                     // the new thenbb is the successor of the deleted bb
                     bb->thenBB = targetBlock->thenBB;
                     List_remove(BBlist, targetBlock);
-                    newTargetBlock = bb->thenBB; //targetblock->thenBB
+                    newTargetBlock = bb->thenBB;//targetblock->thenBB
                     printf("deleted empty then BB successor of %s\n",bb->label);
                     
                     //add this bb as a predecessor for the new target bb
@@ -231,11 +230,10 @@ void display_predecessors(List *funcblocks) {
     }
 
 //genearte image graphs
-//function below is taken from the following source
 // see https://graphviz.org/Gallery/directed/datastruct.html
 // decompiler generates the cfgimage.dot file
 // need to run below command to create the cfgimages.svg file from the .dot file. open it in a browser
-// C:\decompiler\dot>dot -Tsvg cfgimages.dot -o cfgimages.svg
+// C:\decompiler\dot\dot>dot -Tsvg cfgimages.dot -o cfgimages.svg
 
 FILE * init_image(char *filename) {
 
@@ -297,7 +295,6 @@ void add_dot_link(BasicBlock *bb, BasicBlock *target, int pos, FILE* fp) {
     fprintf(fp,"%s\n","];");
 
 }
-//end of code taken from source
 
 void generate_cfg_dot_images(List *funcblocks) {
 
@@ -307,7 +304,7 @@ void generate_cfg_dot_images(List *funcblocks) {
 
     fp=init_image("cfgimages");
 
-    List_reset(funcblocks);
+    List_reset(funcblocks);     //point to the first block
 
      for (int i = 0; i < funcblocks->numItems; i++) {
 
