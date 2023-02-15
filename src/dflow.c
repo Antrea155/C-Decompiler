@@ -312,7 +312,7 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
             var = cpy_sym(get_symbAt(0,ins->operands[0].ptr.offset));
             push(var);
         } else if ((op1type2 == OP_TYPE_LABEL) && seenOnce) {
-            char *string = get_stringLabel(ins->operands[0].value.imm); //returns the string that belongs to that stringlabel
+            char *string = get_stringLabel(ins->operands[0].value.imm);
             symbol = (Symbol *)calloc(1,sizeof(Symbol));
             symbol->value = strdup(string);
             push(symbol);
@@ -321,7 +321,6 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
    } else if (insGrpId == INS_GRP_CALL) {
 
         memset(temp,0,30);
-                //reconstructing call instr
         strcpy(temp,ins->operands[0].op_string);
         strcat(temp,"(");
 
@@ -335,7 +334,7 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
         strcat(temp,symbol->value); strcat(temp,")");
 
         reg = (is64bits) ? get_symbAt("%rax",0): get_symbAt("%eax",0);
-        reg->value = strdup(temp); // (x,y,z)
+        reg->value = strdup(temp);
         printf("call->%s\n",reg->value);
         //TODO before pop save in callees funcsymblock
 
@@ -542,10 +541,7 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
 
 }
 
-void analyze_cmp(BasicBlock *bb) {
-    printf("analyzing compare instruction\n");
 
-}
 
 void data_flow(List *funcBlocks, List *stringBlocks) {
 
@@ -574,7 +570,7 @@ void data_flow(List *funcBlocks, List *stringBlocks) {
        List_pushElement_back(funcSymTable, funcSymBlock );
        curFuncSymbs = List_new(&funcSymBlock->funcsymbols); //curActRecord
       
-       //add the func as a global symbol
+      //TODO do I need this?
        add_symbol(new_symbol(funcSymBlock->fname,0));  //type= LONG, size=0, val="" add to global sym list
        Symbol *tmpSym = (Symbol *)calloc(1,sizeof(Symbol));
        tmpSym->type = FUNC;  
@@ -630,7 +626,7 @@ void data_flow(List *funcBlocks, List *stringBlocks) {
            
               
             BasicBlock *bb = (BasicBlock *)List_getNextElement(BBlist);
-            printf(" c like ins for basic block -> %s\n -> ",bb->label);
+            printf(" c like ins for basic block -> %s\n ins-> ",bb->label);
 
             List *clikeinsL = &(bb->ClikeInsL);
             List_reset(clikeinsL);
@@ -647,9 +643,9 @@ void data_flow(List *funcBlocks, List *stringBlocks) {
       
     }
    
-    }
+ }
 
-    void display_symbols() {
+ void display_symbols() {
 
       ListElement *current = globalSymbols->current;
       List_reset(globalSymbols);     //point to the first block

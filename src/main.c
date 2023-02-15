@@ -15,7 +15,8 @@ void generate_cfg_dot_images(List *funcblocks);
 void data_flow(List *funcBlocks, List *stringBlocks);
 void display_dfins(List *funcBlocks);
 void control_flow(List *funcBlocks);
-void display_BBs_seq(List *funcBlocks);
+//void display_BBs_seq(List *funcBlocks);
+//void display_intervals(List *funcBlocks);
 bool is64bits = false;
 
 int main(int argc, char* argv[]) {  // argc is the number of inputs thats entered in the commandline
@@ -67,5 +68,6 @@ int main(int argc, char* argv[]) {  // argc is the number of inputs thats entere
     }
 
     control_flow(funcBlocksP);
-    display_BBs_seq(funcBlocksP);
+   // display_BBs_seq(funcBlocksP);
+    //display_intervals(funcBlocksP);
 }

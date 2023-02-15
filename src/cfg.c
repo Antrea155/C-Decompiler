@@ -70,9 +70,8 @@ void create_CFG(List *funcblocks) {
                 ListElement *current = BBlist->current;  //save current pointer
                 targetBlock = find_block(bb->thenLabel, BBlist);
                 BBlist->current = current;  //restore current pointer
-                bb->thenBB = targetBlock; //associate thenBB with the currentBB
-                if (targetBlock) 
-                    printf("found target block from label ->%s to label ->%s\n",bb->label,targetBlock->label);
+                bb->thenBB = targetBlock;
+                if (targetBlock) printf("found target block from label ->%s to label ->%s\n",bb->label,targetBlock->label);
               
                 //add this bb as a predecessor for the target bb
                 List *predecessors = &(targetBlock->Predecessors);
@@ -87,8 +86,7 @@ void create_CFG(List *funcblocks) {
                 targetBlock = find_block(bb->elseLabel, BBlist);
                 BBlist->current = current;  //restore current pointer
                 bb->elseBB = targetBlock;
-                if (targetBlock) 
-                    printf("found target block from label ->%s to label ->%s\n", bb->label,targetBlock->label);
+                if (targetBlock) printf("found target block from label ->%s to label ->%s\n", bb->label,targetBlock->label);
                
                 //add this bb as a predecessor for the target bb
                 List *predecessors = &(targetBlock->Predecessors);
@@ -119,7 +117,7 @@ void create_CFG(List *funcblocks) {
                     // the new thenbb is the successor of the deleted bb
                     bb->thenBB = targetBlock->thenBB;
                     List_remove(BBlist, targetBlock);
-                    newTargetBlock = bb->thenBB;//targetblock->thenBB
+                    newTargetBlock = bb->thenBB;
                     printf("deleted empty then BB successor of %s\n",bb->label);
                     
                     //add this bb as a predecessor for the new target bb
@@ -233,7 +231,7 @@ void display_predecessors(List *funcblocks) {
 // see https://graphviz.org/Gallery/directed/datastruct.html
 // decompiler generates the cfgimage.dot file
 // need to run below command to create the cfgimages.svg file from the .dot file. open it in a browser
-// C:\decompiler\dot\dot>dot -Tsvg cfgimages.dot -o cfgimages.svg
+//C:\decompiler\dot\dot>dot -Tsvg cfgimages.dot -o cfgimages.svg
 
 FILE * init_image(char *filename) {
 
