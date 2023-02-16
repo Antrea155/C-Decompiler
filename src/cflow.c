@@ -24,6 +24,7 @@ void number_bbs(BasicBlock *bb, int *n) {
       bb->visited = true;
       number_bbs(bb->elseBB, n);
       number_bbs(bb->thenBB, n);
+     // number_bbs(bb->elseBB, n);
       bb->pos = *n;  
       *n = *n-1; 
     }
@@ -101,7 +102,7 @@ bool includesAll(List *IntervalList, List *predecesorsList) {
    return true;
   
 }
-
+/*
 bool delete_from_inprocess(BBnode *bb, List *inprocessList) {
 
    ListElement *current = inprocessList->current;
@@ -128,6 +129,7 @@ bool delete_from_inprocess(BBnode *bb, List *inprocessList) {
    return false;
 
 }
+*/
 
 int noOfBBchildren(BasicBlock *bb) {
 
@@ -158,8 +160,8 @@ IntervalBlock *get_IntervalBlock(BasicBlock *bb) {
 }
 
 
-
-void findIntervals() {
+/*
+void findIntervals2() {
 
  // bool visited[MAX_BBs] = {false};
   set_all_not_visited();
@@ -235,6 +237,64 @@ void findIntervals() {
   } 
 
 }
+*/
+
+IntervalBlock *can_be_added_to_interval(List *curAllfuncIntervals, BasicBlock *bb){
+
+    ListElement *current = curAllfuncIntervals->current;
+    List_reset(curAllfuncIntervals);
+
+    for (int i=0; i<curAllfuncIntervals->numItems; i++ ) {
+
+      IntervalBlock *iblock = (IntervalBlock *)List_getNextElement(curAllfuncIntervals);
+      if  (includesAll(&(iblock->BBsInInterval), &(bb->Predecessors)) ) {
+        curAllfuncIntervals->current = current;
+        return iblock;
+      } 
+    }
+
+    curAllfuncIntervals->current = current;
+    return NULL;
+
+}
+
+
+void findIntervals() {
+
+  IntervalBlock *anIntervalBlock;
+
+  printf("\n\ncreating intervals\n");
+
+   for (int i = 1; i <= curBBlist->numItems; i++) {
+
+       BasicBlock *bbinProcess = (BasicBlock *)get_bb_in_cfg(i, curBBlist);
+        printf("processing [%d %s]\n",bbinProcess->pos, bbinProcess->label);
+       
+       if ((anIntervalBlock = can_be_added_to_interval(curAllfuncIntervals, bbinProcess))) {
+
+         bbinProcess->head = anIntervalBlock->ihead;
+         BBnode *aBB = (BBnode *)calloc(1,sizeof(BBnode));
+         aBB->bbptr = bbinProcess;
+         List_pushElement_back(&(anIntervalBlock->BBsInInterval),aBB);  //printf("added in interval ->%d\n",aBB->bbptr->pos);
+
+       } else {
+
+           IntervalBlock *curInterval = (IntervalBlock *)calloc(1, sizeof(IntervalBlock));
+           List_new(&(curInterval->BBsInInterval));
+           curInterval->ihead = bbinProcess;
+           bbinProcess->head = curInterval->ihead;
+           BBnode *aBB = (BBnode *)calloc(1,sizeof(BBnode));
+           aBB->bbptr = bbinProcess;
+           List_pushElement_back(&(curInterval->BBsInInterval),aBB);  //printf("added in new interval ->%d\n",aBB->bbptr->pos);
+           List_pushElement_back(curAllfuncIntervals, curInterval);
+       }
+      
+
+    }
+   
+
+}
+
 
 void control_flow(List *funcBlocks) {
 

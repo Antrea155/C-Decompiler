@@ -297,46 +297,6 @@ int process_instruction(char *inst, Instruction **instP) {
     
 }
 
-/*
-void process_string_constants(List *blocks) {
-//update the value of an IMM operand with the contents of constant strings
-// for example for  movl  $.LC0, %edi  find and update the value of the first operand with LC0 string contents
-
-printf("processing string constants\n");
-    BasicBlock *targetBlock=0;
-
-    List_reset(blocks);     //point to the first block
-
-     for (int i = 0; i < blocks->numItems; i++) {
-
-       BasicBlock *block = (BasicBlock *)List_getNextElement(blocks);
-       List *instructions = &(block->Instructions);
-       List_reset(instructions);
-
-         for (int i = 0; i < instructions->numItems; i++) {
-           
-            targetBlock=0;
-            Instruction *ins = (Instruction *)List_getNextElement(instructions);
-            if ((ins->operands[0].type == OP_TYPE_IMM) && (ins->operands[0].value.imm[0]=='.')){
-                
-                ListElement *current = blocks->current;  //save current pointer
-                targetBlock = find_block(ins->operands[0].value.imm, blocks);
-                blocks->current = current;  //restore current pointer
-                if (targetBlock) {
-                    Instruction *tempins = (Instruction *)(targetBlock->Instructions.head);
-                    strcpy(ins->operands[0].value.imm, tempins->operands[0].op_string);
-                    printf("process strings: found target block with string ->%s<-\n", ins->operands[0].value.imm);
-                }
-            }
-        }
-      
-
-    }
-
-   
-
-}
-*/
 
 void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
 
