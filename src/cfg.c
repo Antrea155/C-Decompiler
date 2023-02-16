@@ -176,17 +176,20 @@ void display_successors(List *funcblocks) {
            
             BasicBlock *bb = (BasicBlock *)List_getNextElement(BBlist);
 
+            printf(" %s ->{",bb->label);
+
             if (bb->thenBB ) {
                 
-               printf("    %s -> %s\n",bb->label, bb->thenBB->label);
+               printf("%s", bb->thenBB->label);
                
             }
              
             if (bb->elseBB ) {
                 
-               printf("    %s -> %s\n",bb->label, bb->elseBB->label);
+               printf(", %s}\n", bb->elseBB->label);
                 
-            }       
+            }  else
+                printf("}\n");  
       
 
         }
@@ -212,7 +215,7 @@ void display_predecessors(List *funcblocks) {
            
             
             BasicBlock *bb = (BasicBlock *)List_getNextElement(BBlist);
-             printf("   predecessors for basic block -> %s ->{ ",bb->label);
+             printf(" %s ->{ ",bb->label);
 
              List *predecessors = &(bb->Predecessors);
              List_reset(predecessors);
@@ -231,7 +234,7 @@ void display_predecessors(List *funcblocks) {
 // see https://graphviz.org/Gallery/directed/datastruct.html
 // decompiler generates the cfgimage.dot file
 // need to run below command to create the cfgimages.svg file from the .dot file. open it in a browser
-//C:\decompiler\dot\dot>dot -Tsvg cfgimages.dot -o cfgimages.svg
+// C:\decompiler\dot>dot -Tsvg cfgimages.dot -o cfgimages.svg
 
 FILE * init_image(char *filename) {
 
