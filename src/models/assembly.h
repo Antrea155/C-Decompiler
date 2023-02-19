@@ -104,6 +104,7 @@ typedef struct _basicBlock {
   int                      pos;              //position in cfg tree
   struct _basicBlock       *head; //head node of the interval it belongs to
   bool                     visited;	
+  bool                     merged; // if merged with some other block during T2
   List                     Predecessors;      //List of Predecessors
   List                     Instructions;        //List of Instructions
   List                     ClikeInsL;        //List of C like Instructions

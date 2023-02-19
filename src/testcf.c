@@ -10,8 +10,8 @@
 
 /*
  a program to test the control flow analysis module
- a number of basic blocks are created, labeled B1 - B15, and linked in accordance with fig 2 in 
- article "structuring decompiled graphs"
+ a number of basic blocks are created, labeled B1 - B15, with no instructions and linked in accordance with fig 2 in 
+ article "structuring decompiled graphs" https://link.springer.com/content/pdf/10.1007%2F3-540-61053-7_55.pdf
  the control flow module is then called and must verify that:
    the test CFG is firstly divided to correct number of intervals and then T2 transformations are
    applied to these intervals  until the limit Graph is reached
@@ -24,7 +24,8 @@ void display_predecessors(List *funcBlocksP);
 List *funcBlocks;         //list of pointers to Blocks
   
 List *BBlist;
-int glob_veriable = 2;
+//int glob_veriable = 2;
+bool is64bits = false;
 
 BasicBlock *findbb( char *label) {
     
@@ -51,7 +52,7 @@ void addbb(char *label) {
     //add current basic block to the func basic blocks list
     List_pushElement_back( BBlist, basicblockP); 
         //create a list to hold the predecessors in the basic block
-    
+    List_new(&(basicblockP->Instructions));
     List_new(&(basicblockP->Predecessors));
 }
 
