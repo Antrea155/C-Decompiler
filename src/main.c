@@ -18,6 +18,7 @@ void control_flow(List *funcBlocks);
 //void display_BBs_seq(List *funcBlocks);
 //void display_intervals(List *funcBlocks);
 bool is64bits = false;
+int glob_veriable = 2;
 
 int main(int argc, char* argv[]) {  // argc is the number of inputs thats entered in the commandline
                                     // argv is an array that holds those values

@@ -336,6 +336,7 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
         reg = (is64bits) ? get_symbAt("%rax",0): get_symbAt("%eax",0);
         reg->value = strdup(temp);
         printf("call->%s\n",reg->value);
+        List_destroy(stack);
         //TODO before pop save in callees funcsymblock
 
 

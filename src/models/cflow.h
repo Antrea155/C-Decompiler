@@ -15,6 +15,7 @@ typedef struct   {
   ListElement      listElement;          
   List             BBsInInterval;
   BasicBlock       *ihead;
+  BasicBlock       *loophead;
   List             loopNodes;
   List             latchNodes;
   LoopType         type;

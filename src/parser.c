@@ -11,7 +11,7 @@
 #define FOREVER for(;;)
 #define MAX_CHARS_IN_LINE 200
 
-int glob_veriable = 2;
+
 extern const instr_map instr_table[];
 extern int instr_table_length;
 

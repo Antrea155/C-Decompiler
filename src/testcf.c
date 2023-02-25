@@ -24,8 +24,7 @@ void display_predecessors(List *funcBlocksP);
 List *funcBlocks;         //list of pointers to Blocks
   
 List *BBlist;
-//int glob_veriable = 2;
-bool is64bits = false;
+int glob_veriable = 2;
 
 BasicBlock *findbb( char *label) {
     
@@ -133,6 +132,9 @@ int main() {
     display_predecessors(funcBlocks);
 
     control_flow(funcBlocks);
+
+     display_successors(funcBlocks);
+    display_predecessors(funcBlocks);
 }
 
 

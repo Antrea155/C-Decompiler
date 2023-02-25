@@ -173,9 +173,10 @@ void display_successors(List *funcblocks) {
 
          for (int i = 0; i < BBlist->numItems; i++) {
            
-           
+            
             BasicBlock *bb = (BasicBlock *)List_getNextElement(BBlist);
 
+            if (bb->merged) continue;
             printf(" %s ->{",bb->label);
 
             if (bb->thenBB ) {
@@ -215,6 +216,7 @@ void display_predecessors(List *funcblocks) {
            
             
             BasicBlock *bb = (BasicBlock *)List_getNextElement(BBlist);
+            if (bb->merged) continue;
              printf(" %s ->{ ",bb->label);
 
              List *predecessors = &(bb->Predecessors);
