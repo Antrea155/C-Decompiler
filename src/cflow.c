@@ -8,10 +8,10 @@
 #include "models/assembly.h"
 #include "models/cflow.h"
 
-List *stackk;
-#define push( listElement ) _List_pushElement( stackk, (ListElement *)(listElement) )
-#define pop()  (BBnode *)List_popElement( stackk)
-#define top()  (BBnode *)List_getHead( stackk )
+extern List *stack;
+#define push( listElement ) _List_pushElement( stack, (ListElement *)(listElement) )
+#define pop()  (BBnode *)List_popElement( stack )
+#define top()  (BBnode *)List_getHead( stack )
 
 //List *funcBlocksList;
 void display_BBs_seq();
@@ -240,119 +240,49 @@ void mergeLinks(BasicBlock *bb, BasicBlock *childbb){
 
 }
 
-void mergebb2(BasicBlock *bb, BasicBlock *q) {
+void  adjust_pred(BasicBlock *bb, BasicBlock *achild, BasicBlock *otherChild, int cond){
 
-    printf ("bb [%s %d] will be merged with [%s %d]\n", bb->label, bb->pos, q->label, q->pos);
-   // BasicBlock *q = bb->thenBB; //child
-    BasicBlock *t; //grandchild
-    q->merged = true;
-    if (q->thenBB) {
-      printf("merge case 1\n");
-      if ((q->thenBB == bb) && q->elseBB) {
-        t=q->elseBB;
-        //erase q from predecessors of bb
-        remove_predecessor(q,bb);
-      } else
-         t=q->thenBB;
-      
-      bb->thenBB = t;
-      //erase q from prede of t
-       //bb->elseBB = 0; //?? breaks with ifelse cond
-      remove_predecessor(q,t);
-      //add bb to predecessors of t
-      add_predecessor(bb,t);
+  List *predecesorsOfchild = &(achild->Predecessors);
+ 
+  List *predecessorsParent = &(bb->Predecessors);
+ 
+ 
 
-    } else if ((bb->elseBB) && (bb->elseBB->thenBB == q)) {
-      printf("merge case 2\n");
-      bb->elseBB->thenBB=0;
-      bb->thenBB = bb->elseBB;
-      bb->elseBB =0;
-      remove_predecessor(bb,q);
+  ListElement *current = predecesorsOfchild->current;
+ 
+  List_reset(predecesorsOfchild);
+
+  for (int i=0;i<predecesorsOfchild->numItems;i++) {
+
+    Predecessor *pred = (Predecessor *)List_getNextElement(predecesorsOfchild);
+
+    if ((pred->bbptr->pos != bb->pos) && 
+         (( (cond !=3 ) && (pred->bbptr->pos != otherChild->pos) ) || (cond == 3))
+         ) {
+      printf("adjusting pred ->%d of achild ->%d\n", pred->bbptr->pos, achild->pos);
+      if (pred->bbptr->thenBB == achild) pred->bbptr->thenBB = bb;
+      else if (pred->bbptr->elseBB == achild) pred->bbptr->elseBB = bb;
+      else printf("could not adjust pred\n");
+      if (!belongs(pred->bbptr->pos, predecessorsParent))
+         add_predecessor(pred->bbptr, bb);
+    }
     
-
-    } else {
-        printf("merge case 3\n");
-       bb->thenBB = 0;
     }
+  
 
-    if (bb->thenBB == bb->elseBB) 
-     bb->elseBB = 0;
-    //add  bb to predecessors of grandchildrens 
-    // remove child from predecessor of grandchildren
-    //mergebbInstructions
-    //mergeLinks
-    if (bb->thenBB == bb) { printf("pointing to itself\n");
-      bb->thenBB = bb->elseBB;
-      //erase bb from predecsessors of bb
-      remove_predecessor(bb,bb);
-    }
+   predecesorsOfchild->current = current; //printf("inlclude\n");
+   
+
 }
 
-void mergebb(BasicBlock *bb, BasicBlock *thenchild, BasicBlock *elsechild) {
+void mergeT2(BasicBlock *bb, BasicBlock *thenchild) {
 
-    if (!elsechild)
+    
       printf ("bb [%s %d] will be merged with [%s %d]\n", bb->label, bb->pos, thenchild->label, thenchild->pos);
-    else
-      printf ("bb [%s %d] will be merged with [%s %d] and [%s %d]\n", bb->label, bb->pos, thenchild->label, thenchild->pos,
-                                                        elsechild->label, elsechild->pos);
-   // BasicBlock *q = bb->thenBB; //child
-    BasicBlock *t; //grandchild
-    if (thenchild && elsechild) {
-       printf("merge case 1 ifelse\n");
-
-       thenchild->merged = true;
-       elsechild->merged = true;
-
-       bb->thenBB = thenchild->thenBB;
-       bb->elseBB = 0;
-       // else of children?
-       remove_predecessor(thenchild,thenchild->thenBB);
-       remove_predecessor(elsechild, thenchild->thenBB);
-       add_predecessor(bb, thenchild->thenBB);
-
-    } else if ((bb->elseBB) && (bb->elseBB->thenBB == thenchild)) {
    
-        printf("merge case 2 ifcond\n");
-        thenchild->merged = true;
-
-        bb->elseBB->thenBB=0;
-        if (thenchild->thenBB) {
-          bb->thenBB = thenchild->thenBB;
-          remove_predecessor(thenchild,thenchild->thenBB);
-          add_predecessor(bb,thenchild->thenBB);
-        }
-        else {
-        
-        bb->thenBB = bb->elseBB;
-        bb->elseBB =0;
-        }
-      
-    } else if ((bb->elseBB) && (thenchild->thenBB == bb->elseBB)) {
-
-        printf("merge case 3 ifcond\n");
-        thenchild->merged = true;
-
-        remove_predecessor(thenchild, bb->elseBB);
-        if (thenchild->elseBB) {
-          bb->thenBB = thenchild->elseBB;
-          remove_predecessor(thenchild,thenchild->elseBB);
-          add_predecessor(bb,thenchild->elseBB);
-        } else {
-           bb->thenBB = bb->elseBB;
-           bb->elseBB =0;
-        }
-    } else if (thenchild->thenBB == bb) {
-       printf("merge case loop\n");
-       thenchild->merged = true;
-       
-       remove_predecessor(thenchild,bb);
-       if (thenchild->elseBB) {
-         bb->thenBB = thenchild->elseBB;
-         remove_predecessor(thenchild,thenchild->elseBB);
-         add_predecessor(bb,thenchild->elseBB);
-       }
-
-    } else if (thenchild->thenBB) {
+  
+   
+   if (thenchild->thenBB) {
       printf("merge case 4\n");
       thenchild->merged = true;
       bb->thenBB = thenchild->thenBB;
@@ -365,8 +295,11 @@ void mergebb(BasicBlock *bb, BasicBlock *thenchild, BasicBlock *elsechild) {
        bb->thenBB = 0;
     }
 
-    if (bb->thenBB == bb->elseBB) 
-     bb->elseBB = 0;
+  //  if (bb->thenBB == bb->elseBB) 
+   //  bb->elseBB = 0;
+    
+    if ((bb->elseBB) && (!bb->thenBB))
+         {bb->thenBB = bb->elseBB ; bb->elseBB = 0;}
     //add  bb to predecessors of grandchildrens 
     // remove child from predecessor of grandchildren
     //mergebbInstructions
@@ -379,19 +312,19 @@ void mergebb(BasicBlock *bb, BasicBlock *thenchild, BasicBlock *elsechild) {
 }
 
 
-bool ifcond(BasicBlock *bb, List *interval) {
+int ifcond(BasicBlock *bb, List *interval) {
 
    if (!belongs(bb->thenBB->pos, interval) && !belongs(bb->elseBB->pos,interval))
-      return false;
+      return 0;
 
-   if (bb->thenBB->thenBB == bb->elseBB)
-     { //printf("found cond 1\n"); 
-     return true;}
+   if (bb->elseBB == bb->thenBB)
+     return 3;
+   else if (bb->thenBB->thenBB == bb->elseBB)
+     return 1;
    else if (bb->elseBB->thenBB == bb->thenBB)
-     {//printf("found cond 2\n");
-     return true; }
+     return 2; 
 
-   return false;
+   return 0;
 
 }
 
@@ -410,23 +343,105 @@ bool ifElsecond(BasicBlock *bb, List *interval) {
 
 void mergeCond(BasicBlock *bb , int cond) {
 
+  printf("will merge conditional bb [%s %d]\n", bb->label, bb->pos);
+
    // printf("will merge conditional bb [%s %d]\n", bb->label, bb->pos);
    // while (canApplyT2(bb->thenBB)) mergebb(bb->thenBB); //TODO do I Need this?
   //  while (canApplyT2(bb->elseBB)) mergebb(bb->elseBB);
-    
-    if (cond == 2) {
-      mergebb(bb, bb->thenBB, bb->elseBB);// bb->thenBB->merged = true;
+    BasicBlock *thenchild = bb->thenBB;
+    BasicBlock *elsechild = bb->elseBB;
+
+     if (cond == 1) {
+     // mergebb(bb, bb->thenBB, bb->elseBB);// bb->thenBB->merged = true;
      // mergebb(bb, bb->elseBB); //->elseBB->merged = true;
       //mergeifElse -> blockmerge(bb,bb->thenbb,bb->elsebb)
+
+      //  merge if (leftop op right op) with {then instructions}
+      // merge with else instructions
+        printf("mergec case 1 ifcond\n");
+        thenchild->merged = true;
+        elsechild->merged = true;
+
+        bb->thenBB = bb->elseBB;
+        bb->elseBB = 0;
+        if (elsechild->thenBB) {
+          bb->thenBB = thenchild->thenBB;
+          remove_predecessor(elsechild,elsechild->thenBB);
+          add_predecessor(bb,elsechild->thenBB);
+        }
+        else {
+        
+        bb->thenBB = 0;
+        
+        }
+     } else if (cond == 2) {
+     // mergebb(bb, bb->thenBB, bb->elseBB);// bb->thenBB->merged = true;
+     // mergebb(bb, bb->elseBB); //->elseBB->merged = true;
+      //mergeifElse -> blockmerge(bb,bb->thenbb,bb->elsebb)
+
+      // reverse operator and merge with else instructions -> if (leftop !op rightop) {else intructions}
+      // merge with then instructions
+        printf("mergec case 2 ifcond\n");
+        thenchild->merged = true;
+        elsechild->merged = true;
+
+        bb->elseBB =0;
+        if (thenchild->thenBB) {
+          bb->thenBB = thenchild->thenBB;
+          remove_predecessor(thenchild,thenchild->thenBB);
+          add_predecessor(bb,thenchild->thenBB);
+        }
+        else {
+        
+        bb->thenBB = 0;
+        
+        }
+    } else if (cond == 3) { //bb then and else points to same child
+        printf("mergec case 3 ifcond\n");
+        thenchild->merged = true;
+        elsechild->merged = true;
+        //  merge if (leftop op right op) with {then instructions}
+        bb->elseBB =0;
+        if (thenchild->thenBB) {
+          bb->thenBB = thenchild->thenBB;
+          remove_predecessor(thenchild,thenchild->thenBB);
+          add_predecessor(bb,thenchild->thenBB);
+        }
+        else {
+        
+        bb->thenBB = 0;
+        
+        }
+
     } else {
-        if (bb->thenBB == bb) { printf("pointing to itself\n");
-         bb->thenBB = bb->elseBB;
-        //erase bb from predecsessors of bb
-         remove_predecessor(bb,bb);
-         }
-       mergebb(bb,bb->thenBB,0); //->thenBB->merged = true;
+
+      printf("mergec case 4 ifelse\n");
+      //merge if (leftop op rightop)  {then instructions}
+      //merge else {else intructions}
+      thenchild->merged = true;
+      elsechild->merged = true;
+      
+       bb->thenBB = thenchild->thenBB;
+       bb->elseBB = 0;
+       // else of children?
+       remove_predecessor(thenchild,thenchild->thenBB);
+       remove_predecessor(elsechild, thenchild->thenBB);
+       add_predecessor(bb, thenchild->thenBB);
+       
     }
-    //mergeif ->blockmerge(bb,0,bb->thenbb)
+    
+    //if a predx of a child is not bb or the other child make predx point to bb
+    //and add predx to bb's preds if not exists
+    if (cond !=3) {
+     adjust_pred(bb, thenchild, elsechild, cond);
+     adjust_pred(bb, elsechild, thenchild, cond);
+    }
+    else 
+     adjust_pred(bb,thenchild,0, cond);
+
+     if ((bb->elseBB) && (!bb->thenBB))
+         {bb->thenBB = bb->elseBB ; bb->elseBB = 0;}
+    
 
 }
 
@@ -445,12 +460,12 @@ void check_for_conditionals(List *interval) {
        BasicBlock *bb = ((BBnode *)List_getPrevElement(interval))->bbptr;
        
        if ((noOfBBchildren(bb) == 2) && !(bb->thenBB->merged)) { 
-          
-          if (ifcond(bb, interval) ) { printf("if cond at %d\n",bb->pos);
-             mergeCond( bb, 1 );
+          int type;
+          if ((type = ifcond(bb, interval)) ) { 
+             mergeCond( bb, type );
            //  found = true;
-          } else if (ifElsecond(bb, interval)) {  printf("ifelse cond at %d\n",bb->pos);
-             mergeCond( bb, 2 );
+          } else if (ifElsecond(bb, interval)) {  
+             mergeCond( bb, 4 );
           //   found = true;
           }
        }
@@ -463,7 +478,33 @@ void check_for_conditionals(List *interval) {
 void merge_loop(IntervalBlock *intervalblock) {
 
   //erase loophead's NEXT from the interval
-  mergebb(intervalblock->loophead, intervalblock->loophead->thenBB, 0);
+  delete_from_Interval(&(intervalblock->BBsInInterval), intervalblock->loophead->thenBB);
+ 
+
+  BasicBlock *bb = intervalblock->loophead;
+  BasicBlock *thenchild = intervalblock->loophead->thenBB;
+
+  printf("will merge loop bb [%s %d]\n", bb->label, bb->pos);
+
+  if (thenchild->thenBB == bb) {
+    thenchild->merged = true;
+    bb->thenBB = 0;
+
+    remove_predecessor(thenchild,bb);
+    if (thenchild->elseBB) {
+      bb->thenBB = thenchild->elseBB;
+      remove_predecessor(thenchild,thenchild->elseBB);
+      add_predecessor(bb,thenchild->elseBB);
+    }
+
+
+    } else 
+      printf("this is not a loop !!!\n");
+
+    adjust_pred(bb, thenchild, 0, 3);
+
+   if ((bb->elseBB) && (!bb->thenBB))
+         {bb->thenBB = bb->elseBB ; bb->elseBB = 0;}
 
 }
 
@@ -483,14 +524,14 @@ bool check_for_loops(IntervalBlock *intervalb) {
   
   for (int i=0; i<latchnodes->numItems; i++) { 
 
-    List_destroy(stackk);
+    List_destroy(stack);
     BBnode *latchnode = (BBnode *)List_getNextElement(latchnodes);
     if (!belongs(latchnode->bbptr->pos,loopnodes)) { 
       List_pushElement_back(loopnodes,newBBnode(latchnode)); //printf("added %d\n",latchnodet->bbptr->pos);
       push(newBBnode(latchnode));
     }
     
-    while (!List_is_empty(stackk)) { 
+    while (!List_is_empty(stack)) { 
 
        BasicBlock *bb = ((BBnode *)top())->bbptr;
        pop();
@@ -509,6 +550,7 @@ bool check_for_loops(IntervalBlock *intervalb) {
 
   } 
 
+  printf("loop found in interval with loop head ->[%s %d]\n",intervalb->ihead->label, intervalb->loophead->pos);
   printf("loop nodes found ->%d\n", loopnodes->numItems);
   return true;
     
@@ -547,8 +589,8 @@ void findIntervals() {
        BasicBlock *bbinProcess = (BasicBlock *)get_bb_in_cfg(i, curBBlist);
        if (bbinProcess->merged) continue; //ignore any bb that has  been merged with its parent
 
-        printf("processing [%d %s]\n",bbinProcess->pos, bbinProcess->label);
-       
+        //printf("processing [%d %s]\n",bbinProcess->pos, bbinProcess->label);
+     
        if ((anIntervalBlock = can_be_added_to_interval(curAllfuncIntervals, bbinProcess))) {
 
          bbinProcess->head = anIntervalBlock->ihead;
@@ -583,7 +625,8 @@ void performT2() {
        BasicBlock *bb = (BasicBlock *)get_bb_in_cfg(i, curBBlist);
        if (bb->merged) continue;
 
-       printf("processing [%d %s]\n",bb->pos, bb->label);
+       printf("T2 processing [%d %s]\n",bb->pos, bb->label);
+ //   printf("       next->%d else->%d\n",(bb->thenBB ? bb->thenBB->pos : 0),(bb->elseBB ? bb->elseBB->pos : 0));   
        
        if (canApplyT2(bb)) {
 
@@ -594,7 +637,7 @@ void performT2() {
          //delete thenBB from its interval
          delete_from_Interval(&(thenBBintervalb->BBsInInterval), thenBB);
          //merge bb with thenBB
-         mergebb(bb,bb->thenBB,0);
+         mergeT2(bb,bb->thenBB);
          //delete thenBBinterval if no more bbs in it
          if (List_is_empty(&(thenBBintervalb->BBsInInterval)))
            List_remove(curAllfuncIntervals,thenBBintervalb );
@@ -611,7 +654,8 @@ void control_flow(List *funcBlocks) {
  
    
    List_reset(funcBlocks);     //point to the first funcblock
-   stackk = List_new(NULL);  //create the list for stack emulation
+   stack = List_new(NULL);  //create the list for stack emulation
+   curAllfuncIntervals = List_new(NULL);
 
    for (int i = 0; i < funcBlocks->numItems; i++) {
 
@@ -630,7 +674,7 @@ void control_flow(List *funcBlocks) {
        
 
     //loop until just one interval remains
-       curAllfuncIntervals = List_new(NULL); //will hold all intervals for the function
+       List_destroy(curAllfuncIntervals); //empty the list of all elements
 
        findIntervals();
   
@@ -639,22 +683,12 @@ void control_flow(List *funcBlocks) {
 
        //for each interval ??? really?
        performT2();
-     
-       //for each interval ??? really?
-        //check for loops 
-        //find nodes for loops
-        //set type of each loop
-        //check for conditionals and reduce
-
-        //perform T2 ??
-        //reduce loops
+       
+        printf("\n processing intervals\n");
         for (int i = 0; i<curAllfuncIntervals->numItems; i++) {
             IntervalBlock *intervalBlock = (IntervalBlock *)List_getNextElement(curAllfuncIntervals);
             List *intervalnodes = &(intervalBlock->BBsInInterval);
             bool loopfound = check_for_loops(intervalBlock);
-            if (loopfound) {
-              printf("loop found in interval with loop head ->[%s %d]\n",intervalBlock->ihead->label, intervalBlock->loophead->pos);
-            }
 
             check_for_conditionals(intervalnodes);
 
@@ -662,11 +696,30 @@ void control_flow(List *funcBlocks) {
         }
        
       performT2();
-         curAllfuncIntervals = List_new(NULL); //will hold all intervals for the function
+      List_destroy(curAllfuncIntervals); //empty the list of all elements
 
        findIntervals();
 
         display_allfuncIntervals();
+//add here
+      printf("\n processing intervals\n");
+
+         for (int i = 0; i<curAllfuncIntervals->numItems; i++) {
+            IntervalBlock *intervalBlock = (IntervalBlock *)List_getNextElement(curAllfuncIntervals);
+            List *intervalnodes = &(intervalBlock->BBsInInterval);
+            bool loopfound = check_for_loops(intervalBlock);
+ 
+            check_for_conditionals(intervalnodes);
+
+            if (loopfound) merge_loop(intervalBlock);
+        }
+           performT2();
+           
+       List_destroy(curAllfuncIntervals); //empty the list of all elements
+       findIntervals();
+
+        display_allfuncIntervals();
+  
    }
 
 }
@@ -708,7 +761,7 @@ void display_BBs_seq() {
         for (int i = 0; i < bbsIninterval->numItems; i++)  {
 
           BBnode *bb = (BBnode *)List_getNextElement(bbsIninterval);
-          printf("%d ",bb->bbptr->pos);
+          printf("[%d %s] ",bb->bbptr->pos, bb->bbptr->label);
 
         }  
         bbsIninterval->current = current;

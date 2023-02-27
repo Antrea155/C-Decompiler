@@ -179,18 +179,17 @@ void display_successors(List *funcblocks) {
             if (bb->merged) continue;
             printf(" %s ->{",bb->label);
 
-            if (bb->thenBB ) {
-                
+            if (bb->thenBB )      
                printf("%s", bb->thenBB->label);
-               
-            }
+            else printf("E");
+            
              
             if (bb->elseBB ) {
                 
                printf(", %s}\n", bb->elseBB->label);
                 
             }  else
-                printf("}\n");  
+                printf(", E}\n");  
       
 
         }
@@ -226,7 +225,7 @@ void display_predecessors(List *funcblocks) {
                 printf("%s ",bbptr->bbptr->label);
              }
                
-            printf(" }\n");
+            printf("}\n");
          }
      }
 
