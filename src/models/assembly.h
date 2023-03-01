@@ -102,11 +102,11 @@ typedef struct _basicBlock {
   char                     *compOperator;
   CONDITIONAL              condtype;
   int                      pos;              //position in cfg tree
-  struct _basicBlock       *head; //head node of the interval it belongs to
+  struct _basicBlock       *head;            //head node of the interval it belongs to
   bool                     visited;	
-  bool                     merged; // if merged with some other block during T2
+  bool                     merged;            // if merged with some other block during CFA
   List                     Predecessors;      //List of Predecessors
-  List                     Instructions;        //List of Instructions
+  List                     Instructions;        //List of X86 Instructions
   List                     ClikeInsL;        //List of C like Instructions
   
 } BasicBlock;

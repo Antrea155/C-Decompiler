@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "utils/ll.h"
 
-#define VERBOSE_PARSE false
+#define VERBOSE_PARSE true
 #define VERBOSE_CFG true
 #define VERBOSE_DF true
 
@@ -41,7 +41,11 @@ int main(int argc, char* argv[]) {  // argc is the number of inputs thats entere
 
 
     fPointer = fopen(argv[1], "r+"); //opens the assembly file which is stored in argv[1]
-	
+    if (!fPointer) {
+      printf("could not open assembly file\n");
+      exit(1);
+    }
+      	
 
     rewind(fPointer); 
     parse_assembly(fPointer, funcBlocksP, stringBlocksP);   
@@ -69,6 +73,6 @@ int main(int argc, char* argv[]) {  // argc is the number of inputs thats entere
     }
 
     control_flow(funcBlocksP);
-   // display_BBs_seq(funcBlocksP);
+    //display_BBs_seq(funcBlocksP);
     //display_intervals(funcBlocksP);
 }

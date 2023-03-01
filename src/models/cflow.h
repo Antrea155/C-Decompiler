@@ -18,7 +18,7 @@ typedef struct   {
   BasicBlock       *loophead;
   List             loopNodes;
   List             latchNodes;
-  LoopType         type;
+  LoopType         looptype;
 
 } IntervalBlock;
 

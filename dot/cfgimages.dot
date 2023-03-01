@@ -11,83 +11,35 @@ shape = "ellipse"
 ];
 edge [
 ];
-subgraph "isarmstrong" {
-label = "isarmstrong";
+subgraph "main" {
+label = "main";
 cluster=true;
 ".TL1"[
-label = "<f0>.TL1| <f1> pushl |<f2>"
+label = "<f0>.TL1| <f1> pushq |<f2>"
 shape = "record"
 ];
-".TL1":f1 -> ".L8":f0 [
+".TL1":f1 -> ".L2":f0 [
 id=1
 ];
-".L8"[
-label = "<f0>.L8| <f1> cmpl |<f2>"
+".L3"[
+label = "<f0>.L3| <f1> movzwl |<f2>"
 shape = "record"
 ];
-".L8":f1 -> ".L10":f0 [
+".L3":f1 -> ".L2":f0 [
 id=1
 ];
-".L8":f2 -> ".L9":f0 [
-id=1
-];
-".L10"[
-label = "<f0>.L10| <f1> movl |<f2>"
+".L2"[
+label = "<f0>.L2| <f1> cmpw |<f2>"
 shape = "record"
 ];
-".L10":f1 -> ".L8":f0 [
+".L2":f1 -> ".L3":f0 [
 id=1
 ];
-".L9"[
-label = "<f0>.L9| <f1> empty |<f2>"
-shape = "record"
-];
-".L9":f1 -> ".L11":f0 [
+".L2":f2 -> ".TL2":f0 [
 id=1
 ];
-".L11"[
-label = "<f0>.L11| <f1> cmpl |<f2>"
-shape = "record"
-];
-".L11":f1 -> ".L13":f0 [
-id=1
-];
-".L11":f2 -> ".L12":f0 [
-id=1
-];
-".L13"[
-label = "<f0>.L13| <f1> subl |<f2>"
-shape = "record"
-];
-".L13":f1 -> ".L11":f0 [
-id=1
-];
-".L12"[
-label = "<f0>.L12| <f1> movl |<f2>"
-shape = "record"
-];
-".L12":f1 -> ".L14":f0 [
-id=1
-];
-".L12":f2 -> ".TL4":f0 [
-id=1
-];
-".TL4"[
-label = "<f0>.TL4| <f1> movl |<f2>"
-shape = "record"
-];
-".TL4":f1 -> ".L7":f0 [
-id=1
-];
-".L14"[
-label = "<f0>.L14| <f1> movl |<f2>"
-shape = "record"
-];
-".L14":f1 -> ".L7":f0 [
-id=1
-];
-".L7"[
-label = "<f0>.L7| <f1> movl |<f2>"
+".TL2"[
+label = "<f0>.TL2| <f1> movl |<f2>"
 shape = "record"
 ];
 }
