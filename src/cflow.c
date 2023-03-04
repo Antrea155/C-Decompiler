@@ -196,7 +196,6 @@ bool canApplyT2(BasicBlock *bb) {
 // b)	the child has only one predecessor and one or zero children.
 // c)	Parent and child are not in a loop.
 // d)	Parent not pointing to itself).
-
     if ((noOfBBchildren(bb) == 1)) {
          if ( !(bb->thenBB->merged) && (bb != bb->thenBB) && (bb->thenBB->Predecessors.numItems == 1) &&
            (noOfBBchildren(bb->thenBB)<=1) )
@@ -270,7 +269,8 @@ void  adjust_pred(BasicBlock *bb, BasicBlock *achild, BasicBlock *otherChild, in
 
     Predecessor *pred = (Predecessor *)List_getNextElement(predecesorsOfchild);
 
-    if ((pred->bbptr->pos != bb->pos) && (( (cond !=3 ) && (pred->bbptr->pos != otherChild->pos) ) || (cond == 3))) {
+    if ((pred->bbptr->pos != bb->pos) && 
+         (( (cond !=3 ) && (pred->bbptr->pos != otherChild->pos) ) || (cond == 3)) ) {
       printf("adjusting pred ->%d of achild ->%d\n", pred->bbptr->pos, achild->pos);
       if (pred->bbptr->thenBB == achild) pred->bbptr->thenBB = bb;
       else if (pred->bbptr->elseBB == achild) pred->bbptr->elseBB = bb;
@@ -719,14 +719,23 @@ void control_flow(List *funcBlocks) {
       List_destroy(curAllfuncIntervals); 
       createIntervals();
       display_allfuncIntervals();
+      int nodesInInterval = 0;
 
       printf("\nstarting intervals reduction\n");
 
-      //loop until just one interval remains with one node in it
+      //loop until just one interval remains (the limit interval) with just one node in it
 
       do {
+
         performT2();
      
+       //for each interval 
+          //check for loop and find loop nodes
+          //set type of each loop
+          //check for conditionals and merge
+          //merge loop
+       
+
         printf("\nprocessing intervals\n");
 
         for (int i = 0; i<curAllfuncIntervals->numItems; i++) {
@@ -748,10 +757,13 @@ void control_flow(List *funcBlocks) {
         createIntervals();
         display_allfuncIntervals();
 
+        //get number of nodes in first interval. 
+        //it will be the only one when we reach the limit interval
+        nodesInInterval = nodes_in_interval(); 
         printf("number of intervals ->%d, number of nodes in first interval ->%d\n",
-                                     curAllfuncIntervals->numItems, nodes_in_interval());
+                                     curAllfuncIntervals->numItems, nodesInInterval);
     
-      } while ((curAllfuncIntervals->numItems >1) || (nodes_in_interval() >1) );
+      } while ((curAllfuncIntervals->numItems >1) || (nodesInInterval >1) );
 
   }
 
