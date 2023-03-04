@@ -65,6 +65,15 @@ void set_all_not_visited() {
 
 }
 
+int nodes_in_interval() {
+
+  IntervalBlock *intervalBlock = (IntervalBlock *)List_getHead(curAllfuncIntervals);
+  List *intervalnodes = &(intervalBlock->BBsInInterval);
+
+  return intervalnodes->numItems;
+
+}
+
 //remove a BB from a the predecessors list of another BB
 void remove_predecessor(BasicBlock *bb, BasicBlock *fromBB) {
 
@@ -183,6 +192,10 @@ int noOfBBchildren(BasicBlock *bb) {
 }
 
 bool canApplyT2(BasicBlock *bb) {
+// a)	the parent has only one child
+// b)	the child has only one predecessor and one or zero children.
+// c)	Parent and child are not in a loop.
+// d)	Parent not pointing to itself).
 
     if ((noOfBBchildren(bb) == 1)) {
          if ( !(bb->thenBB->merged) && (bb != bb->thenBB) && (bb->thenBB->Predecessors.numItems == 1) &&
@@ -257,9 +270,7 @@ void  adjust_pred(BasicBlock *bb, BasicBlock *achild, BasicBlock *otherChild, in
 
     Predecessor *pred = (Predecessor *)List_getNextElement(predecesorsOfchild);
 
-    if ((pred->bbptr->pos != bb->pos) && 
-         (( (cond !=3 ) && (pred->bbptr->pos != otherChild->pos) ) || (cond == 3))
-         ) {
+    if ((pred->bbptr->pos != bb->pos) && (( (cond !=3 ) && (pred->bbptr->pos != otherChild->pos) ) || (cond == 3))) {
       printf("adjusting pred ->%d of achild ->%d\n", pred->bbptr->pos, achild->pos);
       if (pred->bbptr->thenBB == achild) pred->bbptr->thenBB = bb;
       else if (pred->bbptr->elseBB == achild) pred->bbptr->elseBB = bb;
@@ -314,11 +325,11 @@ int ifcond(BasicBlock *bb, List *interval) {
       return 0;
 
    if (bb->elseBB == bb->thenBB)
-     return 3;
+     return IF_3;
    else if (bb->thenBB->thenBB == bb->elseBB)
-     return 1;
+     return IF_1;
    else if (bb->elseBB->thenBB == bb->thenBB)
-     return 2; 
+     return IF_2; 
 
    return 0;
 
@@ -347,7 +358,7 @@ void mergeCond(BasicBlock *bb , int cond) {
     BasicBlock *thenchild = bb->thenBB;
     BasicBlock *elsechild = bb->elseBB;
 
-     if (cond == 1) {
+     if (cond == IF_1) {
      // mergebb(bb, bb->thenBB, bb->elseBB);// bb->thenBB->merged = true;
      // mergebb(bb, bb->elseBB); //->elseBB->merged = true;
       //mergeifElse -> blockmerge(bb,bb->thenbb,bb->elsebb)
@@ -370,7 +381,7 @@ void mergeCond(BasicBlock *bb , int cond) {
         bb->thenBB = 0;
         
         }
-     } else if (cond == 2) {
+     } else if (cond == IF_2) {
      // mergebb(bb, bb->thenBB, bb->elseBB);// bb->thenBB->merged = true;
      // mergebb(bb, bb->elseBB); //->elseBB->merged = true;
       //mergeifElse -> blockmerge(bb,bb->thenbb,bb->elsebb)
@@ -392,7 +403,7 @@ void mergeCond(BasicBlock *bb , int cond) {
         bb->thenBB = 0;
         
         }
-    } else if (cond == 3) { 
+    } else if (cond == IF_3) { 
        //bb's then and else is to same child
        //this can occur when we have nested ifs and after the inner if is merged
        //  merge if (leftop op rightop) with {then instructions}
@@ -422,7 +433,7 @@ void mergeCond(BasicBlock *bb , int cond) {
       
        bb->thenBB = thenchild->thenBB;
        bb->elseBB = 0;
-       // else of children?
+      
        remove_predecessor(thenchild,thenchild->thenBB);
        remove_predecessor(elsechild, thenchild->thenBB);
        add_predecessor(bb, thenchild->thenBB);
@@ -464,7 +475,7 @@ void check_for_conditionals(List *interval) {
              mergeCond( bb, type );
            //  found = true;
           } else if (ifElsecond(bb, interval)) {  
-             mergeCond( bb, 4 );
+             mergeCond( bb, IFELSE );
           //   found = true;
           }
        }
@@ -609,7 +620,7 @@ IntervalBlock *can_be_added_to_interval(List *curAllfuncIntervals, BasicBlock *b
 }
 
 
-void findIntervals() {
+void createIntervals() {
 
   IntervalBlock *anIntervalBlock;
 
@@ -620,7 +631,7 @@ void findIntervals() {
        BasicBlock *bbinProcess = (BasicBlock *)get_bb_in_cfg(i, curBBlist);
        if (bbinProcess->merged) continue; //ignore any bb that has  been merged with its parent
 
-        //printf("processing [%d %s]\n",bbinProcess->pos, bbinProcess->label);
+       // printf("processing [%d %s]\n",bbinProcess->pos, bbinProcess->label);
      
        if ((anIntervalBlock = can_be_added_to_interval(curAllfuncIntervals, bbinProcess))) {
 
@@ -689,13 +700,12 @@ void control_flow(List *funcBlocks) {
    stack = List_new(NULL);  //create the list for stack emulation
    curAllfuncIntervals = List_new(NULL);
 
-   for (int i = 0; i < funcBlocks->numItems; i++) {
+  for (int i = 0; i < funcBlocks->numItems; i++) {
 
        FuncBlock *funcblock = (FuncBlock *)List_getNextElement(funcBlocks);
        printf("flow control analysis for function ->%s\n",funcblock->funcName);
 
-       List *BBlist = &(funcblock->funcBBlist);
-       curBBlist = BBlist;
+       curBBlist = &(funcblock->funcBBlist);
        List_reset(curBBlist);
 
        BasicBlock *firstbb = (BasicBlock *)List_getHead(curBBlist);
@@ -703,24 +713,27 @@ void control_flow(List *funcBlocks) {
        //assign a number to each bb in accordance with its position in CFG
        number_bbs(firstbb, &n);
        display_BBs_seq();
-       
+    
 
-    //loop until just one interval remains
-       List_destroy(curAllfuncIntervals); //empty the list of all elements
-
-       findIntervals();
   
-  
-       display_allfuncIntervals();
+      List_destroy(curAllfuncIntervals); 
+      createIntervals();
+      display_allfuncIntervals();
 
-       //for each interval ??? really?
-       performT2();
+      printf("\nstarting intervals reduction\n");
+
+      //loop until just one interval remains with one node in it
+
+      do {
+        performT2();
      
-        printf("\n processing intervals\n");
+        printf("\nprocessing intervals\n");
+
         for (int i = 0; i<curAllfuncIntervals->numItems; i++) {
+
             IntervalBlock *intervalBlock = (IntervalBlock *)List_getNextElement(curAllfuncIntervals);
             List *intervalnodes = &(intervalBlock->BBsInInterval);
-
+            
             bool loopfound = check_for_loops(intervalBlock);
             if (loopfound) eval_loop_type(intervalBlock);
 
@@ -729,34 +742,18 @@ void control_flow(List *funcBlocks) {
             if (loopfound) merge_loop(intervalBlock);
         }
        
-      performT2();
-      List_destroy(curAllfuncIntervals); //empty the list of all elements
+        performT2();
 
-       findIntervals();
-
+        List_destroy(curAllfuncIntervals); //empty the list of all elements
+        createIntervals();
         display_allfuncIntervals();
-//add here
 
-      printf("\n processing intervals\n");
+        printf("number of intervals ->%d, number of nodes in first interval ->%d\n",
+                                     curAllfuncIntervals->numItems, nodes_in_interval());
+    
+      } while ((curAllfuncIntervals->numItems >1) || (nodes_in_interval() >1) );
 
-         for (int i = 0; i<curAllfuncIntervals->numItems; i++) {
-            IntervalBlock *intervalBlock = (IntervalBlock *)List_getNextElement(curAllfuncIntervals);
-            List *intervalnodes = &(intervalBlock->BBsInInterval);
-            bool loopfound = check_for_loops(intervalBlock);
-            if (loopfound) eval_loop_type(intervalBlock);
- 
-            check_for_conditionals(intervalnodes);
-
-            if (loopfound) merge_loop(intervalBlock);
-        }
-           performT2();
-
-       List_destroy(curAllfuncIntervals); //empty the list of all elements
-       findIntervals();
-
-        display_allfuncIntervals();
-  
-   }
+  }
 
 }
 

@@ -46,7 +46,6 @@ typedef enum  {
     INS_GRP_POP=17
   } InstrGroup;
 
-typedef enum  { NOCOND, IF, IFELSE } CONDITIONAL;
 
 typedef struct {
  
@@ -100,7 +99,6 @@ typedef struct _basicBlock {
   char                     *leftOp;
   char                     *rightOp;
   char                     *compOperator;
-  CONDITIONAL              condtype;
   int                      pos;              //position in cfg tree
   struct _basicBlock       *head;            //head node of the interval it belongs to
   bool                     visited;	

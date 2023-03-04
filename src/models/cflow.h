@@ -10,6 +10,7 @@ typedef enum  {
        NONE, PRE, POST, ENDLESS 
 	} LoopType;
 
+typedef enum  { NOCOND, IF_1, IF_2, IF_3, IFELSE } CONDITIONAL;
 
 typedef struct   {
   ListElement      listElement;          
