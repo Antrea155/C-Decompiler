@@ -82,4 +82,10 @@ typedef struct   {
 } stackEntry; 
 */
 
+typedef struct {
+  ListElement      listElement;
+  char             *cins;
+
+} ClikeIns;
+
 #endif

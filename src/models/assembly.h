@@ -117,11 +117,7 @@ typedef struct {
 
 } Predecessor;
 
-typedef struct {
-  ListElement      listElement;
-  char             *cins;
 
-} ClikeIns;
 
 typedef struct {
   ListElement      listElement;

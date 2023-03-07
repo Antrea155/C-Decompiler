@@ -94,6 +94,8 @@ char *get_stringLabel(char *label) {
 
 char *get_Coper(char *insmnem) {
 
+    //get the C operator from a conditional jump or set x86 instruction
+    // ja, jg, seta, setg, je, jz, jge, jne, etc
     char *a = strchr(insmnem,'a');
     char *g = strchr(insmnem,'g');
 
@@ -454,7 +456,7 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
        } else if ((op1type2 == OP_TYPE_NUM) && (op2type2 == OP_TYPE_SBP)) {
          var = get_symbAt(0,ins->operands[1].ptr.offset);
          bb->leftOp = strdup(var->name);
-         bb->rightOp = strdup(ins->operands[0].op_string);
+         bb->rightOp = strdup(ins->operands[0].value.imm);
          printf("left->%s, right->%s\n",bb->leftOp,bb->rightOp);
 
        } else printf("  ->>instruction not analyzed<<---\n");
