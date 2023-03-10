@@ -10,12 +10,14 @@
 #include "models/cflow.h"
 
 extern List *stack;
-#define push(listElement) _List_pushElement(stack, (ListElement *)(listElement))
-#define pop() (BBnode *)List_popElement(stack)
-#define top() (BBnode *)List_getHead(stack)
+#define push( listElement ) _List_pushElement( stack, (ListElement *)(listElement) )
+#define pop()  (BBnode *)List_popElement( stack )
+#define top()  (BBnode *)List_getHead( stack )
 
-extern char *get_Coper(char *insmnem); // get it from the data flow module
-// List *funcBlocksList;
+extern char *get_Coper(char *insmnem); //get it from the data flow module
+extern char *getFuncDefinition(char *fun); //get it from the data flow module
+extern char *getFuncReturn(char *fun); //get it from the data flow module
+//List *funcBlocksList;
 void display_BBs_seq();
 void print_interval(IntervalBlock *interval);
 void display_allfuncIntervals();
@@ -24,808 +26,771 @@ void print_func_ClikeIns();
 List *curBBlist;
 List *curAllfuncIntervals;
 
+
 char *reverseOp(char *op)
 {
-  if (!strcmp(op, ">"))
-    return "<=";
-  if (!strcmp(op, "<="))
-    return ">";
+	if (!strcmp(op,">"))
+		return "<=";
+	if (!strcmp(op, "<="))
+		return ">";
+	
+	if (!strcmp(op, "=="))
+		return "!=";
+	if (!strcmp(op, "!="))
+		return "==";
 
-  if (!strcmp(op, "=="))
-    return "!=";
-  if (!strcmp(op, "!="))
-    return "==";
-
-  if (!strcmp(op, ">="))
-    return "<";
-  if (!strcmp(op, "<"))
-    return ">=";
-
-  printf("could not reverse op ->%s", op);
+	if (!strcmp(op, ">="))
+		return "<";
+	if (!strcmp(op, "<"))
+		return ">=";
+	
+  printf("could not reverse op ->%s",op);
   return ("??");
 }
 
-void number_bbs(BasicBlock *bb, int *n)
-{
+void number_bbs(BasicBlock *bb, int *n) {
 
-  if ((bb) && (!bb->visited))
-  {
-    bb->visited = true;
-    number_bbs(bb->elseBB, n);
-    number_bbs(bb->thenBB, n);
-    // number_bbs(bb->elseBB, n);
-    bb->pos = *n;
-    *n = *n - 1;
-  }
+    if ((bb) && (!bb->visited)) {
+      bb->visited = true;
+      number_bbs(bb->elseBB, n);
+      number_bbs(bb->thenBB, n);
+     // number_bbs(bb->elseBB, n);
+      bb->pos = *n;  
+      *n = *n-1; 
+    }
+
 }
 
-// create a new BBnode List element which has a pointer to a BB of an existing BBnode
-BBnode *newBBnode(BBnode *bbn)
-{
+//create a new BBnode List element which has a pointer to a BB of an existing BBnode 
+BBnode *newBBnode(BBnode *bbn) {
 
   BBnode *newBB = (BBnode *)calloc(1, sizeof(BBnode));
   newBB->bbptr = bbn->bbptr;
   return newBB;
 }
 
-// create a new BBnode List element which has a pointer to an existing BB
-BBnode *newBBnode2(BasicBlock *bb)
-{
+//create a new BBnode List element which has a pointer to an existing BB
+BBnode *newBBnode2(BasicBlock *bb) {
 
   BBnode *newBB = (BBnode *)calloc(1, sizeof(BBnode));
   newBB->bbptr = bb;
   return newBB;
 }
 
-// create a new ClikeIns List element which has the string of an existing ClikeIns
-ClikeIns *newClikeIns(ClikeIns *ins)
-{
+//create a new ClikeIns List element which has the string of an existing ClikeIns
+ClikeIns *newClikeIns(ClikeIns *ins) {
 
-  ClikeIns *newClikeIns = (ClikeIns *)calloc(1, sizeof(ClikeIns));
-  newClikeIns->cins = strdup(ins->cins);
-  return newClikeIns;
+   ClikeIns *newClikeIns = (ClikeIns *)calloc(1, sizeof(ClikeIns));
+   newClikeIns->cins = strdup(ins->cins);
+   return newClikeIns;
+
 }
 
-// create a new ClikeIns List element which has a specified string
-ClikeIns *newClikeIns2(char *ins)
-{
+//create a new ClikeIns List element which has a specified string
+ClikeIns *newClikeIns2(char *ins) {
 
-  ClikeIns *newClikeIns = (ClikeIns *)calloc(1, sizeof(ClikeIns));
-  newClikeIns->cins = strdup(ins);
-  return newClikeIns;
+   ClikeIns *newClikeIns = (ClikeIns *)calloc(1, sizeof(ClikeIns));
+   newClikeIns->cins = strdup(ins);
+   return newClikeIns;
+
 }
 
-void set_all_not_visited()
-{
+void set_all_not_visited() {
 
-  List_reset(curBBlist);
+     List_reset(curBBlist);
 
-  for (int i = 0; i < curBBlist->numItems; i++)
-  {
+      for (int i = 0; i < curBBlist->numItems; i++)  {
 
-    BasicBlock *bb = (BasicBlock *)List_getNextElement(curBBlist);
+        BasicBlock *bb = (BasicBlock *)List_getNextElement(curBBlist);
 
-    bb->visited = false;
-  }
+        bb->visited = false;
+
+      }
+
 }
 
-int num_of_nodes_in_interval()
-{
+//get number of nodes in first interval
+int num_of_nodes_in_interval() {
 
   IntervalBlock *intervalBlock = (IntervalBlock *)List_getHead(curAllfuncIntervals);
   List *intervalnodes = &(intervalBlock->BBsInInterval);
 
   return intervalnodes->numItems;
+
 }
 
-// remove a BB from a the predecessors list of another BB
-void remove_predecessor(BasicBlock *bb, BasicBlock *fromBB)
-{
+//get bb in limit interval. this should be the first and only interval in the intervals list
+BasicBlock *get_bb_in_limit_interval() {
+
+  IntervalBlock *intervalBlock = (IntervalBlock *)List_getHead(curAllfuncIntervals);
+  List *intervalnodes = &(intervalBlock->BBsInInterval);
+
+  BBnode *bbnode = (BBnode *)List_getHead(intervalnodes);
+  return (bbnode->bbptr);
+
+}
+
+//remove a BB from a the predecessors list of another BB
+void remove_predecessor(BasicBlock *bb, BasicBlock *fromBB) {
 
   List *predecessors = &(fromBB->Predecessors);
   ListElement *current = predecessors->current;
 
   List_reset(predecessors);
-  for (int i = 0; i < predecessors->numItems; i++)
-  {
+  for (int i=0; i<predecessors->numItems;i++) {
     Predecessor *pred = (Predecessor *)List_getNextElement(predecessors);
-    if (pred->bbptr->pos == bb->pos)
-    {
-      List_remove(predecessors, pred);
-      return;
+    if (pred->bbptr->pos == bb->pos) {
+       List_remove(predecessors, pred);
+       return;
     }
   }
-  printf("%d not found in predecessors\n", bb->pos);
+  printf("%d not found in predecessors\n",bb->pos);
 }
 
-// add a BB to the predecessors list of another BB
-void add_predecessor(BasicBlock *bb, BasicBlock *toBB)
-{
+//add a BB to the predecessors list of another BB
+void add_predecessor(BasicBlock *bb, BasicBlock *toBB) {
 
   List *predecessors = &(toBB->Predecessors);
 
   Predecessor *newPred = (Predecessor *)calloc(1, sizeof(Predecessor));
   newPred->bbptr = bb;
-  List_pushElement_back(predecessors, newPred);
+  List_pushElement_back(predecessors,newPred);
+  
 }
 
-BasicBlock *get_bb_in_cfg(int pos, List *BBlist)
-{
+BasicBlock *get_bb_in_cfg(int pos, List *BBlist) {
 
-  ListElement *current = BBlist->current;
-  List_reset(BBlist); // point to the first block
+      ListElement *current = BBlist->current;
+      List_reset(BBlist);     //point to the first block
+    
+      for (int i = 0; i < BBlist->numItems; i++)  {
 
-  for (int i = 0; i < BBlist->numItems; i++)
-  {
+        BasicBlock *bb = (BasicBlock *)List_getNextElement(BBlist);
 
-    BasicBlock *bb = (BasicBlock *)List_getNextElement(BBlist);
+        if (bb->pos == pos) {  
+             BBlist->current = current;
+            // printf("   found string %s for label %s\n",sb->string, label);
+             return bb;
+        }
 
-    if (bb->pos == pos)
-    {
-      BBlist->current = current;
-      // printf("   found string %s for label %s\n",sb->string, label);
-      return bb;
-    }
-  }
-  BBlist->current = current;
-  printf("  bb with pos %d not found in bblist\n", pos);
-  return NULL;
-}
+      }
+       BBlist->current = current;
+       printf ("  bb with pos %d not found in bblist\n",pos);
+       return NULL;
+} 
 
-// apend the C like instructions in the thenChild bb to the
-// C like instructions of its parent bb
 
-void mergeT2instructions(BasicBlock *bb, BasicBlock *child)
-{
+//apend the C like instructions in the thenChild bb to the
+//C like instructions of its parent bb 
+
+void mergeT2instructions(BasicBlock *bb, BasicBlock *child) {
 
   List *parentInstructions = &(bb->ClikeInsL);
-  List *childInstructions = &(child->ClikeInsL);
+  List *childInstructions =  &(child->ClikeInsL);
 
   List_reset(childInstructions);
 
-  for (int i = 0; i < childInstructions->numItems; i++)
-  {
+  for (int i=0; i<childInstructions->numItems; i++) { 
 
-    ClikeIns *childIns = (ClikeIns *)List_getNextElement(childInstructions);
-    List_pushElement_back(parentInstructions, newClikeIns(childIns));
+     ClikeIns *childIns = (ClikeIns *)List_getNextElement(childInstructions);
+     List_pushElement_back(parentInstructions, newClikeIns(childIns));    
   }
+
 }
 
-void mergeCondInstructions(BasicBlock *bb, int condType)
-{
+
+void  mergeCondInstructions(BasicBlock *bb, int condType) {
 
   char tempIns[100];
-  memset(tempIns, 0, 100);
+  memset(tempIns,0,100);
 
   List *parentInstructions = &(bb->ClikeInsL);
 
-  if (condType == IF_1)
-  {
-    //  merge if (leftop op rightop) with {then-instructions}
-    // merge with else-instructions
-    strcpy(tempIns, "\n\nif (");
-    strcat(tempIns, bb->leftOp);
-    strcat(tempIns, get_Coper(bb->compOperator));
-    strcat(tempIns, bb->rightOp);
-    strcat(tempIns, ") {");
-    List_pushElement_back(parentInstructions, newClikeIns2(tempIns));
+  if (condType == IF_1) {
+      //  merge if (leftop op rightop) with {then-instructions}
+      // merge with else-instructions
+      strcpy(tempIns,"\n\nif (");
+      strcat(tempIns,bb->leftOp);
+      strcat(tempIns,get_Coper(bb->compOperator));
+      strcat(tempIns,bb->rightOp);
+      strcat(tempIns,") {");
+      List_pushElement_back(parentInstructions, newClikeIns2(tempIns));
 
-    mergeT2instructions(bb, bb->thenBB);
-    List_pushElement_back(parentInstructions, newClikeIns2("}\n\n"));
-    mergeT2instructions(bb, bb->elseBB);
-  }
-  else if (condType == IF_2)
-  {
-    // reverse operator and merge with else instructions -> if (leftop !op rightop) {else-instructions}
-    // then, merge with then-instructions
-    strcpy(tempIns, "\n\nif (");
-    strcat(tempIns, bb->leftOp);
-    strcat(tempIns, reverseOp(get_Coper(bb->compOperator)));
-    strcat(tempIns, bb->rightOp);
-    strcat(tempIns, ") {");
-    List_pushElement_back(parentInstructions, newClikeIns2(tempIns));
+      mergeT2instructions(bb,bb->thenBB);
+      List_pushElement_back(parentInstructions, newClikeIns2("}\n\n"));
+      mergeT2instructions(bb,bb->elseBB);
 
-    mergeT2instructions(bb, bb->elseBB);
-    List_pushElement_back(parentInstructions, newClikeIns2("}\n\n"));
-    mergeT2instructions(bb, bb->thenBB);
-  }
-  else if (condType == IF_3)
-  {
-    // bb's then and else point to same child
-    // this can occur when we have nested ifs and after the inner if is merged
-    // merge if (leftop op rightop) with {then-instructions}
-    strcpy(tempIns, "\n\nif (");
-    strcat(tempIns, bb->leftOp);
-    strcat(tempIns, get_Coper(bb->compOperator));
-    strcat(tempIns, bb->rightOp);
-    strcat(tempIns, ") {");
-    List_pushElement_back(parentInstructions, newClikeIns2(tempIns));
+  } else if (condType == IF_2) {
+      // reverse operator and merge with else instructions -> if (leftop !op rightop) {else-instructions}
+      // then, merge with then-instructions
+      strcpy(tempIns,"\n\nif (");
+      strcat(tempIns,bb->leftOp);
+      strcat(tempIns,reverseOp(get_Coper(bb->compOperator)));
+      strcat(tempIns,bb->rightOp);
+      strcat(tempIns,") {");
+      List_pushElement_back(parentInstructions, newClikeIns2(tempIns));
 
-    mergeT2instructions(bb, bb->thenBB);
-    List_pushElement_back(parentInstructions, newClikeIns2("}\n\n"));
-  }
-  else if (condType == IFELSE)
-  {
-    // merge if (leftop !op rightop)  {else-instructions}
-    // merge else {then-instructions}
-    strcpy(tempIns, "\n\nif (");
-    strcat(tempIns, bb->leftOp);
-    strcat(tempIns, reverseOp(get_Coper(bb->compOperator)));
-    strcat(tempIns, bb->rightOp);
-    strcat(tempIns, ") {");
-    List_pushElement_back(parentInstructions, newClikeIns2(tempIns));
+      mergeT2instructions(bb,bb->elseBB);
+      List_pushElement_back(parentInstructions, newClikeIns2("}\n\n"));
+      mergeT2instructions(bb,bb->thenBB);
 
-    mergeT2instructions(bb, bb->elseBB);
-    List_pushElement_back(parentInstructions, newClikeIns2("}\nelse {"));
-    mergeT2instructions(bb, bb->thenBB);
-    List_pushElement_back(parentInstructions, newClikeIns2("}\n\n"));
+  } else if (condType == IF_3) {
+      //bb's then and else point to same child
+      //this can occur when we have nested ifs and after the inner if is merged
+      //merge if (leftop op rightop) with {then-instructions}
+      strcpy(tempIns,"\n\nif (");
+      strcat(tempIns,bb->leftOp);
+      strcat(tempIns,get_Coper(bb->compOperator));
+      strcat(tempIns,bb->rightOp);
+      strcat(tempIns,") {");
+      List_pushElement_back(parentInstructions, newClikeIns2(tempIns));
+
+      mergeT2instructions(bb,bb->thenBB);
+      List_pushElement_back(parentInstructions, newClikeIns2("}\n\n"));
+
+  } else if (condType == IFELSE) {
+      //merge if (leftop !op rightop)  {else-instructions}
+      //merge else {then-instructions}
+      strcpy(tempIns,"\n\nif (");
+      strcat(tempIns,bb->leftOp);
+      strcat(tempIns,reverseOp(get_Coper(bb->compOperator)));
+      strcat(tempIns,bb->rightOp);
+      strcat(tempIns,") {");
+      List_pushElement_back(parentInstructions, newClikeIns2(tempIns));
+
+      mergeT2instructions(bb,bb->elseBB);
+      List_pushElement_back(parentInstructions, newClikeIns2("}\nelse {"));
+      mergeT2instructions(bb,bb->thenBB);  
+      List_pushElement_back(parentInstructions, newClikeIns2("}\n\n"));    
+
   }
+
 }
 
-void mergeLoopInstructions(IntervalBlock *intervalb)
-{
+void mergeLoopInstructions(IntervalBlock *intervalb) {
 
   BasicBlock *loophead = intervalb->loophead;
   List *loopheadIns = &(loophead->ClikeInsL);
   char tempIns[100];
-  memset(tempIns, 0, 100);
+  memset(tempIns,0,100);
 
-  if (intervalb->looptype == PRE)
-  {
+  if (intervalb->looptype == PRE) {
 
-    if (!List_is_empty(loopheadIns))
-    {
-      // TODO
-    }
+      if (!List_is_empty(loopheadIns)) {
+        //TODO
+      }
+  
+      List_pushElement_back(loopheadIns, newClikeIns2("\n\nwhile("));
+      strcpy(tempIns,loophead->leftOp);
+      strcat(tempIns, get_Coper(loophead->compOperator));
+      strcat(tempIns,loophead->rightOp);
+      strcat(tempIns,") {");
+      List_pushElement_back(loopheadIns, newClikeIns2(tempIns));
 
-    List_pushElement_back(loopheadIns, newClikeIns2("\n\nwhile("));
-    strcpy(tempIns, loophead->leftOp);
-    strcat(tempIns, get_Coper(loophead->compOperator));
-    strcat(tempIns, loophead->rightOp);
-    strcat(tempIns, ") {");
-    List_pushElement_back(loopheadIns, newClikeIns2(tempIns));
-
-    mergeT2instructions(loophead, loophead->thenBB);
-    List_pushElement_back(loopheadIns, newClikeIns2("}\n\n"));
-  }
-  else if (intervalb->looptype == POST)
-  {
-
-    List_pushElement(loopheadIns, newClikeIns2("\n\ndo {"));
-    if (loophead != loophead->thenBB)
       mergeT2instructions(loophead, loophead->thenBB);
-    else
-    {
-      remove_predecessor(loophead->thenBB, loophead); // TODO this will be done in merge loop links
-      loophead->thenBB = 0;
-    }
+      List_pushElement_back(loopheadIns, newClikeIns2("}\n\n"));
 
-    List_pushElement_back(loopheadIns, newClikeIns2("}while("));
-    strcpy(tempIns, loophead->leftOp);
-    strcat(tempIns, get_Coper(loophead->compOperator));
-    strcat(tempIns, loophead->rightOp);
-    strcat(tempIns, ");\n\n");
-    List_pushElement_back(loopheadIns, newClikeIns2(tempIns));
+  } else if (intervalb->looptype == POST) {
+
+     List_pushElement(loopheadIns, newClikeIns2("\n\ndo {"));
+     if (loophead != loophead->thenBB) 
+       mergeT2instructions(loophead, loophead->thenBB);
+     else {
+       remove_predecessor(loophead->thenBB, loophead); //TODO this will be done in merge loop links
+       loophead->thenBB = 0;
+     }
+
+     List_pushElement_back(loopheadIns, newClikeIns2("}while("));
+     strcpy(tempIns,loophead->leftOp);
+     strcat(tempIns, get_Coper(loophead->compOperator));
+     strcat(tempIns,loophead->rightOp);
+     strcat(tempIns,");\n\n");
+     List_pushElement_back(loopheadIns, newClikeIns2(tempIns));
+
+  } else if (intervalb->looptype == ENDLESS) {
+
+     if (loophead != loophead->thenBB) {
+       List_pushElement_back(loopheadIns, newClikeIns2("\n\nwhile(1){"));
+       mergeT2instructions(loophead, loophead->thenBB);
+     }
+     else {
+       List_pushElement(loopheadIns, newClikeIns2("while(1){"));
+       remove_predecessor(loophead->thenBB, loophead); //TODO this will be done in merge loop links
+       loophead->thenBB = 0;
+     }
+
+     List_pushElement_back(loopheadIns, newClikeIns2("}\n\n"));
+     
   }
-  else if (intervalb->looptype == ENDLESS)
-  {
 
-    if (loophead != loophead->thenBB)
-    {
-      List_pushElement_back(loopheadIns, newClikeIns2("\n\nwhile(1){"));
-      mergeT2instructions(loophead, loophead->thenBB);
-    }
-    else
-    {
-      List_pushElement(loopheadIns, newClikeIns2("while(1){"));
-      remove_predecessor(loophead->thenBB, loophead); // TODO this will be done in merge loop links
-      loophead->thenBB = 0;
-    }
-
-    List_pushElement_back(loopheadIns, newClikeIns2("}\n\n"));
-  }
 }
 
-// true if a BB with a specified pos belongs to a list of BBnode elements
 
-bool belongs(int pos, List *aList)
-{
+//true if a BB with a specified pos belongs to a list of BBnode elements
+
+bool belongs(int pos, List *aList) {
 
   ListElement *current = aList->current;
-
+  
   List_reset(aList);
-  for (int i = 0; i < aList->numItems; i++)
-  {
+  for (int i=0;i<aList->numItems;i++) {
     BBnode *bbNode = (BBnode *)List_getNextElement(aList);
-    if (bbNode->bbptr->pos == pos)
-    {
-      aList->current = current;
-      return true;
+    if (bbNode->bbptr->pos == pos ) {
+       aList->current = current;
+       return true; 
     }
   }
 
-  aList->current = current;
-  return false;
+   aList->current = current; 
+   return false;
+  
 }
 
-bool includesAll(List *IntervalList, List *predecesorsList)
-{
+bool includesAll(List *IntervalList, List *predecesorsList) {
 
   ListElement *current = predecesorsList->current;
-
+ 
   List_reset(predecesorsList);
-  for (int i = 0; i < predecesorsList->numItems; i++)
-  {
+  for (int i=0;i<predecesorsList->numItems;i++) {
     Predecessor *pred = (Predecessor *)List_getNextElement(predecesorsList);
-    if (!belongs(pred->bbptr->pos, IntervalList))
-    {
-      predecesorsList->current = current;
-      return false;
+    if (!belongs(pred->bbptr->pos, IntervalList )) {
+       predecesorsList->current = current; 
+       return false;
     }
   }
 
-  predecesorsList->current = current; // printf("inlclude\n");
-  return true;
+   predecesorsList->current = current; //printf("inlclude\n");
+   return true;
+  
 }
 
-List *get_intersection(IntervalBlock *intervalblock)
-{
+List *get_intersection(IntervalBlock *intervalblock) {
 
   // get the intersection set between interval nodes and predecessors of interval's head
   List *ihead_predecessors = &(intervalblock->ihead->Predecessors);
   List *intervalnodes = &(intervalblock->BBsInInterval);
 
   ListElement *current = ihead_predecessors->current;
-
+ 
   List_reset(ihead_predecessors);
   List_new(&(intervalblock->latchNodes));
 
-  for (int i = 0; i < ihead_predecessors->numItems; i++)
-  {
+  for (int i=0;i<ihead_predecessors->numItems;i++) {
     Predecessor *pred = (Predecessor *)List_getNextElement(ihead_predecessors);
-    if (belongs(pred->bbptr->pos, intervalnodes))
-    {
-
-      List_pushElement_back(&(intervalblock->latchNodes), newBBnode((BBnode *)pred));
+    if (belongs(pred->bbptr->pos, intervalnodes )) {
+     
+       List_pushElement_back(&(intervalblock->latchNodes),newBBnode((BBnode *)pred));
+       
     }
   }
 
-  ihead_predecessors->current = current; // printf("inlclude\n");
-  return &(intervalblock->latchNodes);
+   ihead_predecessors->current = current; //printf("inlclude\n");
+   return &(intervalblock->latchNodes);
+
+
 }
 
-int noOfBBchildren(BasicBlock *bb)
-{
+int noOfBBchildren(BasicBlock *bb) {
 
-  return (bb->thenBB ? 1 : 0) + (bb->elseBB ? 1 : 0);
+    return ( bb->thenBB ? 1 : 0) + (bb->elseBB ? 1 : 0);
 }
 
-bool canApplyT2(BasicBlock *bb)
-{
+bool canApplyT2(BasicBlock *bb) {
 
-  if ((noOfBBchildren(bb) == 1))
-  {
-    if (!(bb->thenBB->merged) && (bb != bb->thenBB) && (bb->thenBB->Predecessors.numItems == 1) &&
-        (noOfBBchildren(bb->thenBB) <= 1))
-      return true;
-  }
-  return false;
+    if ((noOfBBchildren(bb) == 1)) {
+         if ( !(bb->thenBB->merged) && (bb != bb->thenBB) && (bb->thenBB->Predecessors.numItems == 1) &&
+           (noOfBBchildren(bb->thenBB)<=1) )
+           return true;
+    }
+    return false;
 }
 
 // return intervalBlock that bb belongs to
-IntervalBlock *get_IntervalBlock(BasicBlock *bb)
-{
+IntervalBlock *get_IntervalBlock(BasicBlock *bb) {
 
-  ListElement *current = curAllfuncIntervals->current;
-  List_reset(curAllfuncIntervals);
-  for (int i = 0; i < curAllfuncIntervals->numItems; i++)
-  {
+    ListElement *current = curAllfuncIntervals->current;
+    List_reset(curAllfuncIntervals);
+    for (int i = 0; i < curAllfuncIntervals->numItems; i++)  {
 
-    IntervalBlock *interval = (IntervalBlock *)List_getNextElement(curAllfuncIntervals);
-    if (interval->ihead->pos == bb->head->pos)
-    {
-      curAllfuncIntervals->current = current;
-      return interval;
-    }
-  }
-  printf("interval for bb %d not found\n", bb->pos);
-  curAllfuncIntervals->current = current;
-  return NULL;
-}
-
-void delete_from_Interval(List *interval, BasicBlock *bb)
-{
-
-  ListElement *current = interval->current;
-  List_reset(interval);
-
-  for (int i = 0; i < interval->numItems; i++)
-  {
-
-    BBnode *aBB = (BBnode *)List_getNextElement(interval);
-    if (aBB->bbptr->pos == bb->pos)
-    {
-
-      // if we are about to delete the current element then adjust the current pointer
-      // so that it points to the previous element
-      if (current == (ListElement *)aBB)
-      {
-        if (current->prev == NULL)
-          current = NULL;
-        else
-          current = current->prev;
+      IntervalBlock *interval = (IntervalBlock *)List_getNextElement(curAllfuncIntervals);
+      if (interval->ihead->pos == bb->head->pos) {
+        curAllfuncIntervals->current = current;
+        return interval;
       }
-      List_remove(interval, aBB);
-      interval->current = current;
-      return;
     }
-  }
-
-  printf("bb %d could not be removed from interval\n", bb->pos);
+    printf("interval for bb %d not found\n",bb->pos);
+    curAllfuncIntervals->current = current;
+    return NULL;
 }
 
-void adjust_pred(BasicBlock *bb, BasicBlock *achild, BasicBlock *otherChild, int cond)
-{
+
+
+void delete_from_Interval(List *interval, BasicBlock *bb) {
+
+    
+    ListElement *current = interval->current;
+    List_reset(interval);
+
+    for (int i=0; i<interval->numItems; i++ ) {
+
+      BBnode *aBB = (BBnode *)List_getNextElement(interval);
+      if (aBB->bbptr->pos == bb->pos) {
+        
+       //if we are about to delete the current element then adjust the current pointer  
+       //so that it points to the previous element
+       if (current == (ListElement *)aBB) {
+         if (current->prev == NULL) current = NULL;
+         else current = current->prev; 
+        }
+        List_remove(interval, aBB);
+        interval->current = current;
+        return;
+      }
+      
+    }
+
+   printf("bb %d could not be removed from interval\n", bb->pos);
+}
+
+
+
+void  adjust_pred(BasicBlock *bb, BasicBlock *achild, BasicBlock *otherChild, int cond){
 
   List *predecesorsOfchild = &(achild->Predecessors);
-
+ 
   List *predecessorsParent = &(bb->Predecessors);
+ 
+ 
 
   ListElement *current = predecesorsOfchild->current;
-
+ 
   List_reset(predecesorsOfchild);
 
-  for (int i = 0; i < predecesorsOfchild->numItems; i++)
-  {
+  for (int i=0;i<predecesorsOfchild->numItems;i++) {
 
     Predecessor *pred = (Predecessor *)List_getNextElement(predecesorsOfchild);
 
-    if ((pred->bbptr->pos != bb->pos) &&
-        (((cond != IF_3) && (pred->bbptr->pos != otherChild->pos)) || (cond == IF_3)))
-    {
+    if ((pred->bbptr->pos != bb->pos) && 
+         (( (cond !=IF_3 ) && (pred->bbptr->pos != otherChild->pos) ) || (cond == IF_3))
+         ) {
       printf("adjusting pred ->%d of achild ->%d\n", pred->bbptr->pos, achild->pos);
-      if (pred->bbptr->thenBB == achild)
-        pred->bbptr->thenBB = bb;
-      else if (pred->bbptr->elseBB == achild)
-        pred->bbptr->elseBB = bb;
-      else
-        printf("could not adjust pred\n");
+      if (pred->bbptr->thenBB == achild) pred->bbptr->thenBB = bb;
+      else if (pred->bbptr->elseBB == achild) pred->bbptr->elseBB = bb;
+      else printf("could not adjust pred\n");
       if (!belongs(pred->bbptr->pos, predecessorsParent))
-        add_predecessor(pred->bbptr, bb);
+         add_predecessor(pred->bbptr, bb);
     }
-  }
+    
+    }
+  
 
-  predecesorsOfchild->current = current; // printf("inlclude\n");
+   predecesorsOfchild->current = current; //printf("inlclude\n");
+   
+
 }
 
-void mergeT2(BasicBlock *bb, BasicBlock *thenchild)
-{
+void mergeT2(BasicBlock *bb, BasicBlock *thenchild) {
 
-  printf("bb [%s %d] will be merged with [%s %d]\n", bb->label, bb->pos, thenchild->label, thenchild->pos);
+    
+   printf ("bb [%s %d] will be merged with [%s %d]\n", bb->label, bb->pos, thenchild->label, thenchild->pos);
+   
+   thenchild->merged = true;
+   
+   if (thenchild->thenBB) {
+      printf("merge case 4\n");  
+      bb->thenBB = thenchild->thenBB;
+      remove_predecessor(thenchild,bb->thenBB);
+      add_predecessor(bb,thenchild->thenBB);
 
-  thenchild->merged = true;
+    }  else {
+        printf("merge case 5\n"); 
+        bb->thenBB = 0;
+    }
 
-  if (thenchild->thenBB)
-  {
-    printf("merge case 4\n");
-    bb->thenBB = thenchild->thenBB;
-    remove_predecessor(thenchild, bb->thenBB);
-    add_predecessor(bb, thenchild->thenBB);
-  }
-  else
-  {
-    printf("merge case 5\n");
-    bb->thenBB = 0;
-  }
+ 
+    
+    if ((bb->elseBB) && (!bb->thenBB))
+         {bb->thenBB = bb->elseBB ; bb->elseBB = 0;}
+   
+    if (bb->thenBB == bb) { 
+      printf("pointing to itself\n");
+      bb->thenBB = bb->elseBB;
+      //erase bb from predecsessors of bb
+      remove_predecessor(bb,bb);
+    }
 
-  if ((bb->elseBB) && (!bb->thenBB))
-  {
-    bb->thenBB = bb->elseBB;
-    bb->elseBB = 0;
-  }
-
-  if (bb->thenBB == bb)
-  {
-    printf("pointing to itself\n");
-    bb->thenBB = bb->elseBB;
-    // erase bb from predecsessors of bb
-    remove_predecessor(bb, bb);
-  }
-
-  mergeT2instructions(bb, thenchild);
+    mergeT2instructions(bb, thenchild);
 }
 
-int ifcond(BasicBlock *bb, List *interval)
-{
 
-  // TODO first check if interval also has a loop
-  if (!belongs(bb->thenBB->pos, interval) && !belongs(bb->elseBB->pos, interval))
-    return 0;
+int ifcond(BasicBlock *bb, List *interval) {
 
-  if (bb->elseBB == bb->thenBB)
-    return IF_3;
-  else if (bb->thenBB->thenBB == bb->elseBB)
-    return IF_1;
-  else if (bb->elseBB->thenBB == bb->thenBB)
-    return IF_2;
+   //TODO first check if interval also has a loop
+   if (!belongs(bb->thenBB->pos, interval) && !belongs(bb->elseBB->pos,interval))
+      return 0;
 
-  return 0;
+   if (bb->elseBB == bb->thenBB)
+     return IF_3;
+   else if (bb->thenBB->thenBB == bb->elseBB)
+     return IF_1;
+   else if (bb->elseBB->thenBB == bb->thenBB)
+     return IF_2; 
+
+   return 0;
+
 }
 
-bool ifElsecond(BasicBlock *bb, List *interval)
-{
+bool ifElsecond(BasicBlock *bb, List *interval) {
 
-  // TODO first check if interval also has a loop
-  if (!belongs(bb->thenBB->pos, interval) && !belongs(bb->elseBB->pos, interval))
-    return false;
+   //TODO first check if interval also has a loop
+   if (!belongs(bb->thenBB->pos, interval) && !belongs(bb->elseBB->pos,interval))
+      return false;
 
-  if (bb->thenBB->thenBB == bb->elseBB->thenBB)
-  { // printf("found ifelse cond\n");
-    return true;
-  }
+   if (bb->thenBB->thenBB == bb->elseBB->thenBB)
+     {//printf("found ifelse cond\n");
+     return true; }
 
-  return false;
+   return false;
+
 }
 
-void mergeCond(BasicBlock *bb, int condType)
-{
+void mergeCond(BasicBlock *bb , int condType) {
 
   printf("will merge conditional bb [%s %d]\n", bb->label, bb->pos);
 
-  // printf("will merge conditional bb [%s %d]\n", bb->label, bb->pos);
-  // while (canApplyT2(bb->thenBB)) mergebb(bb->thenBB); //TODO do I Need this?
+   // printf("will merge conditional bb [%s %d]\n", bb->label, bb->pos);
+   // while (canApplyT2(bb->thenBB)) mergebb(bb->thenBB); //TODO do I Need this?
   //  while (canApplyT2(bb->elseBB)) mergebb(bb->elseBB);
-  BasicBlock *thenchild = bb->thenBB;
-  BasicBlock *elsechild = bb->elseBB;
+    BasicBlock *thenchild = bb->thenBB;
+    BasicBlock *elsechild = bb->elseBB;
 
-  if (condType == IF_1)
-  {
+     if (condType == IF_1) {
 
-    //  merge if (leftop op right op) with {then-instructions}
-    // merge with else-instructions
-    printf("mergec case 1 ifcond\n");
-    mergeCondInstructions(bb, condType);
+      //  merge if (leftop op right op) with {then-instructions}
+      // merge with else-instructions
+        printf("mergec case 1 ifcond\n");
+        mergeCondInstructions(bb, condType);
 
-    // merge links
-    thenchild->merged = true;
-    elsechild->merged = true;
+        //merge links
+        thenchild->merged = true;
+        elsechild->merged = true;
 
-    bb->thenBB = bb->elseBB;
-    bb->elseBB = 0;
-    if (elsechild->thenBB)
-    {
-      bb->thenBB = thenchild->thenBB;
-      remove_predecessor(elsechild, elsechild->thenBB);
-      add_predecessor(bb, elsechild->thenBB);
+        bb->thenBB = bb->elseBB;
+        bb->elseBB = 0;
+        if (elsechild->thenBB) {
+          bb->thenBB = thenchild->thenBB;
+          remove_predecessor(elsechild,elsechild->thenBB);
+          add_predecessor(bb,elsechild->thenBB);
+        }
+        else {
+        
+        bb->thenBB = 0;
+        
+        }
+     } else if (condType == IF_2) {
+
+      // reverse operator and merge with else instructions -> if (leftop !op rightop) {else intructions}
+      // merge with then instructions
+        printf("mergec case 2 ifcond\n");
+        mergeCondInstructions(bb, condType);
+
+        //merge links
+        thenchild->merged = true;
+        elsechild->merged = true;
+
+        bb->elseBB =0;
+        if (thenchild->thenBB) {
+          bb->thenBB = thenchild->thenBB;
+          remove_predecessor(thenchild,thenchild->thenBB);
+          add_predecessor(bb,thenchild->thenBB);
+        }
+        else {
+        
+        bb->thenBB = 0;
+        
+        }
+
+        
+
+    } else if (condType == IF_3) { 
+       //bb's then and else point to same child
+       //this can occur when we have nested ifs and after the inner if is merged
+       //merge if (leftop op rightop) with {then-instructions}
+        printf("mergec case 3 ifcond\n");
+        mergeCondInstructions(bb, condType);
+
+        //merge links
+        thenchild->merged = true;
+        elsechild->merged = true;
+        
+        bb->elseBB =0;
+        if (thenchild->thenBB) {
+          bb->thenBB = thenchild->thenBB;
+          remove_predecessor(thenchild,thenchild->thenBB);
+          add_predecessor(bb,thenchild->thenBB);
+        }
+        else {
+        
+        bb->thenBB = 0;
+        
+        }
+
+    } else {
+
+      printf("mergec case 4 ifelse\n");
+       //merge if (leftop !op rightop)  {else instructions}
+      //merge else {then intructions}
+      mergeCondInstructions(bb, condType);
+
+      thenchild->merged = true;
+      elsechild->merged = true;
+      
+       bb->thenBB = thenchild->thenBB;
+       bb->elseBB = 0;
+      
+       remove_predecessor(thenchild,thenchild->thenBB);
+       remove_predecessor(elsechild, thenchild->thenBB);
+       add_predecessor(bb, thenchild->thenBB);
+       
     }
-    else
-    {
-
-      bb->thenBB = 0;
+    
+    //if a predx of a child is not bb or the other child make predx point to bb
+    //and add predx to bb's preds if not exists
+    if (condType !=3) {
+     adjust_pred(bb, thenchild, elsechild, condType);
+     adjust_pred(bb, elsechild, thenchild, condType);
     }
-  }
-  else if (condType == IF_2)
-  {
+    else 
+     adjust_pred(bb,thenchild,0, condType);
 
-    // reverse operator and merge with else instructions -> if (leftop !op rightop) {else intructions}
-    // merge with then instructions
-    printf("mergec case 2 ifcond\n");
-    mergeCondInstructions(bb, condType);
+     if ((bb->elseBB) && (!bb->thenBB))
+         {bb->thenBB = bb->elseBB ; bb->elseBB = 0;}
+    
 
-    // merge links
-    thenchild->merged = true;
-    elsechild->merged = true;
-
-    bb->elseBB = 0;
-    if (thenchild->thenBB)
-    {
-      bb->thenBB = thenchild->thenBB;
-      remove_predecessor(thenchild, thenchild->thenBB);
-      add_predecessor(bb, thenchild->thenBB);
-    }
-    else
-    {
-
-      bb->thenBB = 0;
-    }
-  }
-  else if (condType == IF_3)
-  {
-    // bb's then and else point to same child
-    // this can occur when we have nested ifs and after the inner if is merged
-    // merge if (leftop op rightop) with {then-instructions}
-    printf("mergec case 3 ifcond\n");
-    mergeCondInstructions(bb, condType);
-
-    // merge links
-    thenchild->merged = true;
-    elsechild->merged = true;
-
-    bb->elseBB = 0;
-    if (thenchild->thenBB)
-    {
-      bb->thenBB = thenchild->thenBB;
-      remove_predecessor(thenchild, thenchild->thenBB);
-      add_predecessor(bb, thenchild->thenBB);
-    }
-    else
-    {
-
-      bb->thenBB = 0;
-    }
-  }
-  else
-  {
-
-    printf("mergec case 4 ifelse\n");
-    // merge if (leftop !op rightop)  {else instructions}
-    // merge else {then intructions}
-    mergeCondInstructions(bb, condType);
-
-    thenchild->merged = true;
-    elsechild->merged = true;
-
-    bb->thenBB = thenchild->thenBB;
-    bb->elseBB = 0;
-
-    remove_predecessor(thenchild, thenchild->thenBB);
-    remove_predecessor(elsechild, thenchild->thenBB);
-    add_predecessor(bb, thenchild->thenBB);
-  }
-
-  // if a predx of a child is not bb or the other child make predx point to bb
-  // and add predx to bb's preds if not exists
-  if (condType != 3)
-  {
-    adjust_pred(bb, thenchild, elsechild, condType);
-    adjust_pred(bb, elsechild, thenchild, condType);
-  }
-  else
-    adjust_pred(bb, thenchild, 0, condType);
-
-  if ((bb->elseBB) && (!bb->thenBB))
-  {
-    bb->thenBB = bb->elseBB;
-    bb->elseBB = 0;
-  }
 }
 
-void check_for_conditionals(List *interval)
-{
+void check_for_conditionals(List *interval) {
 
   bool found = true;
 
   ListElement *current = interval->current;
 
-  while (found)
-  {
+  while (found) { 
 
     found = false;
     List_reset(interval);
-    for (int i = 0; i < interval->numItems; i++)
-    {
+    for (int i=0; i<interval->numItems; i++) {
 
-      // start from bottom of the interval
-      BasicBlock *bb = ((BBnode *)List_getPrevElement(interval))->bbptr;
-
-      if ((noOfBBchildren(bb) == 2) && !(bb->thenBB->merged))
-      {
-        int type;
-        if ((type = ifcond(bb, interval)))
-        {
-          mergeCond(bb, type);
-          //  found = true;
-        }
-        else if (ifElsecond(bb, interval))
-        {
-          mergeCond(bb, IFELSE);
+       //start from bottom of the interval
+       BasicBlock *bb = ((BBnode *)List_getPrevElement(interval))->bbptr;
+       
+       if ((noOfBBchildren(bb) == 2) && !(bb->thenBB->merged)) { 
+          int type;
+          if ((type = ifcond(bb, interval)) ) { 
+             mergeCond( bb, type );
+           //  found = true;
+          } else if (ifElsecond(bb, interval)) {  
+             mergeCond( bb, IFELSE );
           //   found = true;
-        }
-      }
+          }
+       }
     }
   }
-  interval->current = current;
+  interval->current = current; 
+
 }
 
-void merge_loop(IntervalBlock *intervalblock)
-{
+void merge_loop(IntervalBlock *intervalblock) {
 
   BasicBlock *bb = intervalblock->loophead;
   BasicBlock *thenchild = intervalblock->loophead->thenBB;
 
   printf("will merge loop at bb [%s %d]\n", bb->label, bb->pos);
 
-  // erase loophead's NEXT from the interval
+  //erase loophead's NEXT from the interval
   delete_from_Interval(&(intervalblock->BBsInInterval), thenchild);
+ 
+  //merge the loop instructions before merging the loop nodes links
+  mergeLoopInstructions(intervalblock); 
 
-  // merge the loop instructions before merging the loop nodes links
-  mergeLoopInstructions(intervalblock);
-
-  // merge loop nodes links
-
-  if (thenchild->thenBB == bb)
-  {
+  //merge loop nodes links
+  
+  if (thenchild->thenBB == bb) {
     thenchild->merged = true;
     bb->thenBB = 0;
 
-    remove_predecessor(thenchild, bb);
-    if (thenchild->elseBB)
-    {
+    remove_predecessor(thenchild,bb);
+    if (thenchild->elseBB) {
       bb->thenBB = thenchild->elseBB;
-      remove_predecessor(thenchild, thenchild->elseBB);
-      add_predecessor(bb, thenchild->elseBB);
+      remove_predecessor(thenchild,thenchild->elseBB);
+      add_predecessor(bb,thenchild->elseBB);
     }
-  }
-  else
-    printf("this is not a loop !!!\n");
 
-  adjust_pred(bb, thenchild, 0, 3);
 
-  if ((bb->elseBB) && (!bb->thenBB))
-  {
-    bb->thenBB = bb->elseBB;
-    bb->elseBB = 0;
-  }
+    } else 
+      printf("this is not a loop !!!\n");
+
+    adjust_pred(bb, thenchild, 0, 3);
+
+   if ((bb->elseBB) && (!bb->thenBB))
+         {bb->thenBB = bb->elseBB ; bb->elseBB = 0;}
+
 }
 
-bool check_for_loops(IntervalBlock *intervalb)
-{
+bool check_for_loops(IntervalBlock *intervalb) {
 
   // a loop exists in the interval if the intersection set between the interval nodes and
   // the predecessors of the interval's head is not empty
   // this intersection set are the latchnodes of the loop
 
   List *latchnodes = get_intersection(intervalb);
+  
+  if (List_is_empty(latchnodes)) return false;
 
-  if (List_is_empty(latchnodes))
-    return false;
-
-  // a loop exists. find its nodes
+  //a loop exists. find its nodes
   intervalb->loophead = intervalb->ihead;
   List *loopnodes = List_new(&(intervalb->loopNodes));
-
-  for (int i = 0; i < latchnodes->numItems; i++)
-  {
+  
+  for (int i=0; i<latchnodes->numItems; i++) { 
 
     List_destroy(stack);
     BBnode *latchnode = (BBnode *)List_getNextElement(latchnodes);
-    if (!belongs(latchnode->bbptr->pos, loopnodes))
-    {
-      List_pushElement_back(loopnodes, newBBnode(latchnode)); // printf("added %d\n",latchnodet->bbptr->pos);
+    if (!belongs(latchnode->bbptr->pos,loopnodes)) { 
+      List_pushElement_back(loopnodes,newBBnode(latchnode)); //printf("added %d\n",latchnodet->bbptr->pos);
       push(newBBnode(latchnode));
     }
+    
+    while (!List_is_empty(stack)) { 
 
-    while (!List_is_empty(stack))
-    {
+       BasicBlock *bb = ((BBnode *)top())->bbptr;
+       pop();
 
-      BasicBlock *bb = ((BBnode *)top())->bbptr;
-      pop();
+       List *predecessors = &(bb->Predecessors); 
+       List_reset(predecessors);
 
-      List *predecessors = &(bb->Predecessors);
-      List_reset(predecessors);
+       for (int j=0; j<predecessors->numItems; j++) { 
 
-      for (int j = 0; j < predecessors->numItems; j++)
-      {
-
-        BBnode *pred = (BBnode *)List_getNextElement(predecessors); // BBnode and Predecessor are of the same struct type
-
-        if (!belongs(pred->bbptr->pos, loopnodes))
-        {
-          List_pushElement_back(loopnodes, newBBnode(pred)); // printf("added %d\n",loopnodet->bbptr->pos);
-          push(newBBnode(pred));
+          BBnode *pred = (BBnode *)List_getNextElement(predecessors);  //BBnode and Predecessor are of the same struct type
+          
+          if (!belongs(pred->bbptr->pos,loopnodes)) {         
+            List_pushElement_back(loopnodes,newBBnode(pred)); //printf("added %d\n",loopnodet->bbptr->pos);
+            push(newBBnode(pred));  
+          }             
         }
-      }
-    }
-  }
 
-  printf("loop found in interval with loop head ->[%s %d]\n", intervalb->ihead->label, intervalb->loophead->pos);
+    } 
+
+  } 
+
+  printf("loop found in interval with loop head ->[%s %d]\n",intervalb->ihead->label, intervalb->loophead->pos);
   printf("loop nodes found ->%d\n", loopnodes->numItems);
   return true;
+    
+
 }
 
 // evaluate the loop type found in an interval (pre-tested, post-tested, endless)
-void eval_loop_type(IntervalBlock *intervalb)
-{
+void eval_loop_type(IntervalBlock *intervalb) {
 
   List *latchnodes = &(intervalb->latchNodes);
   List *loopnodes = &(intervalb->loopNodes);
@@ -833,283 +798,297 @@ void eval_loop_type(IntervalBlock *intervalb)
   BasicBlock *latchingnode = (BasicBlock *)((BBnode *)List_getHead(latchnodes))->bbptr;
   BasicBlock *loophead = intervalb->loophead;
 
-  if ((noOfBBchildren(latchingnode)) == 2)
-  {
+  if ((noOfBBchildren(latchingnode)) == 2) {
 
-    if (noOfBBchildren(loophead) == 2)
-    {
+      if (noOfBBchildren(loophead) == 2) {
 
-      if (loophead == latchingnode)
+          if (loophead == latchingnode)
+            intervalb->looptype = POST;
+          else if (belongs(loophead->thenBB->pos, loopnodes) && belongs(loophead->elseBB->pos, loopnodes)) 
+            intervalb->looptype = POST;
+          else 
+            intervalb->looptype = PRE;
+
+      } else
         intervalb->looptype = POST;
-      else if (belongs(loophead->thenBB->pos, loopnodes) && belongs(loophead->elseBB->pos, loopnodes))
-        intervalb->looptype = POST;
-      else
-        intervalb->looptype = PRE;
-    }
-    else
-      intervalb->looptype = POST;
-  }
-  else if (noOfBBchildren(loophead) == 2)
-    intervalb->looptype = PRE;
+      
+  } else if (noOfBBchildren(loophead) == 2)
+     intervalb->looptype = PRE;
   else
     intervalb->looptype = ENDLESS;
 
-  printf("loop type is ->%d\n", intervalb->looptype);
+    printf("loop type is ->%d\n", intervalb->looptype);
+
 }
 
-IntervalBlock *can_be_added_to_interval(List *curAllfuncIntervals, BasicBlock *bb)
-{
 
-  ListElement *current = curAllfuncIntervals->current;
-  List_reset(curAllfuncIntervals);
+IntervalBlock *can_be_added_to_interval(List *curAllfuncIntervals, BasicBlock *bb){
 
-  for (int i = 0; i < curAllfuncIntervals->numItems; i++)
-  {
+    ListElement *current = curAllfuncIntervals->current;
+    List_reset(curAllfuncIntervals);
 
-    IntervalBlock *iblock = (IntervalBlock *)List_getNextElement(curAllfuncIntervals);
-    if (includesAll(&(iblock->BBsInInterval), &(bb->Predecessors)))
-    {
-      curAllfuncIntervals->current = current;
-      return iblock;
+    for (int i=0; i<curAllfuncIntervals->numItems; i++ ) {
+
+      IntervalBlock *iblock = (IntervalBlock *)List_getNextElement(curAllfuncIntervals);
+      if  (includesAll(&(iblock->BBsInInterval), &(bb->Predecessors)) ) {
+        curAllfuncIntervals->current = current;
+        return iblock;
+      } 
     }
-  }
 
-  curAllfuncIntervals->current = current;
-  return NULL;
+    curAllfuncIntervals->current = current;
+    return NULL;
+
 }
 
-void createIntervals()
-{
+
+void createIntervals() {
 
   IntervalBlock *anIntervalBlock;
 
   printf("\n\ncreating intervals\n");
 
-  for (int i = 1; i <= curBBlist->numItems; i++)
-  {
+   for (int i = 1; i <= curBBlist->numItems; i++) {
 
-    BasicBlock *bbinProcess = (BasicBlock *)get_bb_in_cfg(i, curBBlist);
-    if (bbinProcess->merged)
-      continue; // ignore any bb that has  been merged with its parent
+       BasicBlock *bbinProcess = (BasicBlock *)get_bb_in_cfg(i, curBBlist);
+       if (bbinProcess->merged) continue; //ignore any bb that has  been merged with its parent
 
-    // printf("processing [%d %s]\n",bbinProcess->pos, bbinProcess->label);
+       // printf("processing [%d %s]\n",bbinProcess->pos, bbinProcess->label);
+     
+       if ((anIntervalBlock = can_be_added_to_interval(curAllfuncIntervals, bbinProcess))) {
 
-    if ((anIntervalBlock = can_be_added_to_interval(curAllfuncIntervals, bbinProcess)))
-    {
+         bbinProcess->head = anIntervalBlock->ihead;
+         List_pushElement_back(&(anIntervalBlock->BBsInInterval),newBBnode2(bbinProcess));  //printf("added in interval ->%d\n",aBB->bbptr->pos);
 
-      bbinProcess->head = anIntervalBlock->ihead;
-      List_pushElement_back(&(anIntervalBlock->BBsInInterval), newBBnode2(bbinProcess)); // printf("added in interval ->%d\n",aBB->bbptr->pos);
+       } else {
+
+           IntervalBlock *curInterval = (IntervalBlock *)calloc(1, sizeof(IntervalBlock));
+           List_new(&(curInterval->BBsInInterval));
+           curInterval->ihead = bbinProcess;
+           bbinProcess->head = curInterval->ihead;
+           
+           List_pushElement_back(&(curInterval->BBsInInterval),newBBnode2(bbinProcess));  //printf("added in new interval ->%d\n",aBB->bbptr->pos);
+           List_pushElement_back(curAllfuncIntervals, curInterval);
+       }
+      
+
     }
-    else
-    {
+   
 
-      IntervalBlock *curInterval = (IntervalBlock *)calloc(1, sizeof(IntervalBlock));
-      List_new(&(curInterval->BBsInInterval));
-      curInterval->ihead = bbinProcess;
-      bbinProcess->head = curInterval->ihead;
-
-      List_pushElement_back(&(curInterval->BBsInInterval), newBBnode2(bbinProcess)); // printf("added in new interval ->%d\n",aBB->bbptr->pos);
-      List_pushElement_back(curAllfuncIntervals, curInterval);
-    }
-  }
 }
 
-void performT2()
-{
+
+void performT2() {
 
   printf("\n\nperfroming T2 transformation\n");
 
-  // start from bottom of the control flow tree
-  for (int i = curBBlist->numItems; i > 0; i--)
-  {
+   //start from bottom of the control flow tree
+   for (int i=curBBlist->numItems; i>0; i--) {
 
-    BasicBlock *bb = (BasicBlock *)get_bb_in_cfg(i, curBBlist);
-    if (bb->merged)
-      continue;
+       BasicBlock *bb = (BasicBlock *)get_bb_in_cfg(i, curBBlist);
+       if (bb->merged) continue;
 
-    printf("T2 processing [%d %s]\n", bb->pos, bb->label);
-    //   printf("       next->%d else->%d\n",(bb->thenBB ? bb->thenBB->pos : 0),(bb->elseBB ? bb->elseBB->pos : 0));
+       printf("T2 processing [%d %s]\n",bb->pos, bb->label);
+ //   printf("       next->%d else->%d\n",(bb->thenBB ? bb->thenBB->pos : 0),(bb->elseBB ? bb->elseBB->pos : 0));   
+       
+       if (canApplyT2(bb)) {
 
-    if (canApplyT2(bb))
-    {
+         BasicBlock *thenBB = bb->thenBB;
+         //find the interval the child of the bb belongs to
+         IntervalBlock *thenBBintervalb = get_IntervalBlock(thenBB);
+         //TODO add thenBB to the interval's latchNodes if it does not exist
 
-      BasicBlock *thenBB = bb->thenBB;
-      // find the interval the child of the bb belongs to
-      IntervalBlock *thenBBintervalb = get_IntervalBlock(thenBB);
-      // TODO add thenBB to the interval's latchNodes if it does not exist
+         //delete thenBB from its interval
+         delete_from_Interval(&(thenBBintervalb->BBsInInterval), thenBB);
+         //merge bb with thenBB
+         mergeT2(bb,bb->thenBB);
+         //delete thenBB's interval if no more bbs in it
+         if (List_is_empty(&(thenBBintervalb->BBsInInterval)))
+           List_remove(curAllfuncIntervals,thenBBintervalb );
+       }
 
-      // delete thenBB from its interval
-      delete_from_Interval(&(thenBBintervalb->BBsInInterval), thenBB);
-      // merge bb with thenBB
-      mergeT2(bb, bb->thenBB);
-      // delete thenBB's interval if no more bbs in it
-      if (List_is_empty(&(thenBBintervalb->BBsInInterval)))
-        List_remove(curAllfuncIntervals, thenBBintervalb);
+
     }
-  }
+
 }
 
-void control_flow(List *funcBlocks)
-{
 
-  List_reset(funcBlocks); // point to the first funcblock
-  stack = List_new(NULL); // create the list for stack emulation
-  curAllfuncIntervals = List_new(NULL);
+void control_flow(List *funcBlocks) {
 
-  for (int i = 0; i < funcBlocks->numItems; i++)
-  {
+ 
+   
+   List_reset(funcBlocks);     //point to the first funcblock
+   stack = List_new(NULL);  //create the list for stack emulation
+   curAllfuncIntervals = List_new(NULL);
 
-    FuncBlock *funcblock = (FuncBlock *)List_getNextElement(funcBlocks);
-    printf("flow control analysis for function ->%s\n", funcblock->funcName);
+  for (int i = 0; i < funcBlocks->numItems; i++) {
 
-    curBBlist = &(funcblock->funcBBlist);
-    List_reset(curBBlist);
+       FuncBlock *funcblock = (FuncBlock *)List_getNextElement(funcBlocks);
+       printf("flow control analysis for function ->%s\n",funcblock->funcName);
 
-    BasicBlock *firstbb = (BasicBlock *)List_getHead(curBBlist);
-    int n = curBBlist->numItems;
-    // assign a number to each bb in accordance with its position in CFG
-    number_bbs(firstbb, &n); // TODO move this to cfg module
-    display_BBs_seq();
+       curBBlist = &(funcblock->funcBBlist);
+       List_reset(curBBlist);
 
-    List_destroy(curAllfuncIntervals);
-    createIntervals();
-    display_allfuncIntervals();
-    int nodesInInterval = 0;
+       BasicBlock *firstbb = (BasicBlock *)List_getHead(curBBlist);
+       int n = curBBlist->numItems;
+       //assign a number to each bb in accordance with its position in CFG
+       number_bbs(firstbb, &n); //TODO move this to cfg module
+       display_BBs_seq();
+    
 
-    printf("\nstarting intervals reduction\n");
-
-    // loop until just one interval remains (the limit interval) with just one node in it
-
-    do
-    {
-
-      performT2();
-
-      // for each interval
-      // check for loop and find loop nodes
-      // evaluate the type of each loop
-      // check for conditionals and merge
-      // merge loop if one was found above
-
-      printf("\nprocessing intervals\n");
-
-      for (int i = 0; i < curAllfuncIntervals->numItems; i++)
-      {
-
-        IntervalBlock *intervalBlock = (IntervalBlock *)List_getNextElement(curAllfuncIntervals);
-        List *intervalnodes = &(intervalBlock->BBsInInterval);
-
-        bool loopfound = check_for_loops(intervalBlock);
-        if (loopfound)
-          eval_loop_type(intervalBlock);
-
-        check_for_conditionals(intervalnodes);
-
-        if (loopfound)
-          merge_loop(intervalBlock);
-      }
-
-      performT2();
-
-      List_destroy(curAllfuncIntervals); // empty the list of all elements
+  
+      List_destroy(curAllfuncIntervals); 
       createIntervals();
       display_allfuncIntervals();
+      int nodesInInterval = 0;
 
-      // get number of nodes in first interval.
-      // it will be the only one when we reach the limit interval
-      nodesInInterval = num_of_nodes_in_interval();
-      printf("number of intervals ->%d, number of nodes in first interval ->%d\n",
-             curAllfuncIntervals->numItems, nodesInInterval);
+      printf("\nstarting intervals reduction\n");
 
-    } while ((curAllfuncIntervals->numItems > 1) || (nodesInInterval > 1));
+      //loop until just one interval remains (the limit interval) with just one node in it
 
-    printf("control flow analysis completed\n");
-    print_func_ClikeIns();
+      do {
 
-  } // end of control flow analysis of current function. get next one
+        performT2();
+     
+       //for each interval 
+          //check for loop and find loop nodes
+          //evaluate the type of each loop
+          //check for conditionals and merge
+          //merge loop if one was found above
+       
+
+        printf("\nprocessing intervals\n");
+
+        for (int i = 0; i<curAllfuncIntervals->numItems; i++) {
+
+            IntervalBlock *intervalBlock = (IntervalBlock *)List_getNextElement(curAllfuncIntervals);
+            List *intervalnodes = &(intervalBlock->BBsInInterval);
+            
+            bool loopfound = check_for_loops(intervalBlock);
+            if (loopfound) eval_loop_type(intervalBlock);
+
+            check_for_conditionals(intervalnodes);
+
+            if (loopfound) merge_loop(intervalBlock);
+        }
+       
+        performT2();
+
+        List_destroy(curAllfuncIntervals); //empty the list of all elements
+        createIntervals();
+        display_allfuncIntervals();
+
+        //get number of nodes in first interval. 
+        //it will be the only one when we reach the limit interval
+        nodesInInterval = num_of_nodes_in_interval(); 
+        printf("number of intervals ->%d, number of nodes in first interval ->%d\n",
+                                     curAllfuncIntervals->numItems, nodesInInterval);
+    
+      } while ((curAllfuncIntervals->numItems >1) || (nodesInInterval >1) );
+
+      printf("\ncontrol flow analysis for function %s completed\n",funcblock->funcName);
+
+      //add on front of instructions in limit node the function definition - func(parm1, parm2, ..) {
+      char *funcdef = getFuncDefinition(funcblock->funcName);
+      BasicBlock *limitnode = get_bb_in_limit_interval();
+      List_pushElement(&(limitnode->ClikeInsL), newClikeIns2(funcdef));
+
+      //add at the end return value +}\n\n
+      char *funcRet = getFuncReturn(funcblock->funcName);
+      List_pushElement_back(&(limitnode->ClikeInsL), newClikeIns2(funcRet));
+      
+      print_func_ClikeIns();
+
+  } //end of control flow analysis of current function. get next one
+
 }
 
-void display_BBs_seq()
-{
+void display_BBs_seq() {
 
-  List_reset(curBBlist);
+    
+       List_reset(curBBlist);
 
-  printf("\n\nsequence of BBs in Link List\n");
+        printf("\n\nsequence of BBs in Link List\n");
 
-  for (int i = 0; i < curBBlist->numItems; i++)
-  {
+         for (int i = 0; i < curBBlist->numItems; i++) {
+            
+            BasicBlock *bb = (BasicBlock *)List_getNextElement(curBBlist);
+            printf("[%d %s], ",bb->pos, bb->label);
 
-    BasicBlock *bb = (BasicBlock *)List_getNextElement(curBBlist);
-    printf("[%d %s], ", bb->pos, bb->label);
-  }
+         }
 
-  printf("\n\nsequence of BBs in CFG\n");
+         printf("\n\nsequence of BBs in CFG\n");
 
-  for (int i = 0; i < curBBlist->numItems; i++)
-  {
+         for (int i = 0; i < curBBlist->numItems; i++) {
+            
+            BasicBlock *bb = (BasicBlock *)get_bb_in_cfg(i+1, curBBlist);
+            printf("[%d %s], ",bb->pos, bb->label);
 
-    BasicBlock *bb = (BasicBlock *)get_bb_in_cfg(i + 1, curBBlist);
-    printf("[%d %s], ", bb->pos, bb->label);
-  }
-}
+         }
+         
+    
+   
+ }
 
-void print_interval(IntervalBlock *interval)
-{
+ void print_interval(IntervalBlock *interval) {
 
-  printf("Interval head ->%d\n", interval->ihead->pos);
-  List *bbsIninterval = &(interval->BBsInInterval);
-  ListElement *current = bbsIninterval->current;
-  List_reset(bbsIninterval); // point to the first block
-  printf("BBs in interval -> ");
-  for (int i = 0; i < bbsIninterval->numItems; i++)
-  {
+        printf("Interval head ->%d\n",interval->ihead->pos);
+        List *bbsIninterval = &(interval->BBsInInterval);
+        ListElement *current = bbsIninterval->current;
+        List_reset(bbsIninterval);     //point to the first block
+        printf("BBs in interval -> ");
+        for (int i = 0; i < bbsIninterval->numItems; i++)  {
 
-    BBnode *bb = (BBnode *)List_getNextElement(bbsIninterval);
-    printf("[%d %s] ", bb->bbptr->pos, bb->bbptr->label);
-  }
-  bbsIninterval->current = current;
+          BBnode *bb = (BBnode *)List_getNextElement(bbsIninterval);
+          printf("[%d %s] ",bb->bbptr->pos, bb->bbptr->label);
 
-  printf("\n");
-}
-
-void display_allfuncIntervals()
-{
-
-  ListElement *current = curAllfuncIntervals->current;
-  List_reset(curAllfuncIntervals);
-
-  printf("\n\nAll intervals found\n");
-  for (int i = 0; i < curAllfuncIntervals->numItems; i++)
-  {
-
-    IntervalBlock *interval = (IntervalBlock *)List_getNextElement(curAllfuncIntervals);
-    print_interval(interval);
-  }
-  curAllfuncIntervals->current = current;
-}
-
-void print_func_ClikeIns()
-{
-
-  List_reset(curBBlist);
-
-  printf("\n\nC like instructions in function\n");
-
-  for (int i = 0; i < curBBlist->numItems; i++)
-  {
-
-    BasicBlock *bb = (BasicBlock *)List_getNextElement(curBBlist);
-    // if (bb->merged) continue;
-    printf("Instructions in ->[%d %s]\n", bb->pos, bb->label);
-    List *clikeIns = &(bb->ClikeInsL);
-    List_reset(clikeIns);
-
-    for (int j = 0; j < clikeIns->numItems; j++)
-    {
-      ClikeIns *ins = (ClikeIns *)List_getNextElement(clikeIns);
-      printf("%s", ins->cins);
-    }
-
+        }  
+        bbsIninterval->current = current;
+          
+      
     printf("\n");
-  }
+     
+
+}
+
+void display_allfuncIntervals() {
+
+   ListElement *current = curAllfuncIntervals->current;
+   List_reset(curAllfuncIntervals);
+
+   printf("\n\nAll intervals found\n");
+   for (int i = 0; i < curAllfuncIntervals->numItems; i++)  {
+
+       IntervalBlock *interval = (IntervalBlock *)List_getNextElement(curAllfuncIntervals);
+       print_interval(interval);
+
+    }  
+    curAllfuncIntervals->current = current;
+
+
+}
+
+void print_func_ClikeIns() {
+
+    List_reset(curBBlist);
+
+    printf("\n\nC like instructions in function\n");
+
+      for (int i = 0; i < curBBlist->numItems; i++) {
+        
+        BasicBlock *bb = (BasicBlock *)List_getNextElement(curBBlist);
+        if (bb->merged) continue;
+        printf("Instructions in ->[%d %s]\n",bb->pos, bb->label);
+        List *clikeIns = &(bb->ClikeInsL);
+        List_reset(clikeIns);
+        
+        for (int j=0; j<clikeIns->numItems; j++) {
+          ClikeIns *ins = (ClikeIns *)List_getNextElement(clikeIns);
+          printf("%s",ins->cins);
+        }
+
+        printf("\n");
+
+      }
+
 }

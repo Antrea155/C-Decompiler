@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "utils/ll.h"
 
-#define VERBOSE_PARSE true
+#define VERBOSE_PARSE false
 #define VERBOSE_CFG true
 #define VERBOSE_DF true
 
@@ -73,6 +73,6 @@ int main(int argc, char* argv[]) {  // argc is the number of inputs thats entere
     }
 
     control_flow(funcBlocksP);
-    //display_BBs_seq(funcBlocksP);
+   // display_BBs_seq(funcBlocksP);
     //display_intervals(funcBlocksP);
 }

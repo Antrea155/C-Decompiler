@@ -129,7 +129,7 @@ Symbol *new_symbol(char *index1, int index2 ) {
     Symbol *sym = (Symbol *)calloc(1,sizeof(Symbol));
     if (index1) sym->index1 = strdup(index1);
     if (index2) sym->index2 = index2;
-    sym->type = LONG;
+    
     
     return sym;
 
@@ -151,9 +151,7 @@ void add_REGsymbol(char *index, int size) {
     sym->name= strdup(index);
     sym->value = strdup(index);
     sym->nameSet = true;
-    sym->type = REG;
     sym->size = size;
-    sym->isReg = true;
     List_pushElement_back(globalSymbols,sym);
 
 }
@@ -270,9 +268,7 @@ void upd_symbAt(char *index1, int index2, Symbol *newSym) {
             globalSymbols->current = current; 
             if (newSym->name) sym->name = strdup(newSym->name);
             if (newSym->reference) sym->reference = newSym->reference;
-            if (newSym->seen) sym->seen = newSym->seen;
             if (newSym->size) sym->size = newSym->size;
-            if (newSym->type) sym->type = newSym->type;
             if (newSym->value) sym->value = newSym->value;
             return;
             }
@@ -571,15 +567,15 @@ void data_flow(List *funcBlocks, List *stringBlocks) {
        
        printf("\n\ndata flow analysis for function -> %s\n",funcSymBlock->fname);
        List_pushElement_back(funcSymTable, funcSymBlock );
-       curFuncSymbs = List_new(&funcSymBlock->funcsymbols); //curActRecord
+       curFuncSymbs = List_new(&funcSymBlock->funcsymbols); 
       
       //TODO do I need this?
+      /*
        add_symbol(new_symbol(funcSymBlock->fname,0));  //type= LONG, size=0, val="" add to global sym list
-       Symbol *tmpSym = (Symbol *)calloc(1,sizeof(Symbol));
-       tmpSym->type = FUNC;  
+       Symbol *tmpSym = (Symbol *)calloc(1,sizeof(Symbol)); 
        upd_symbAt(funcSymBlock->fname,0,tmpSym);
        free(tmpSym);  
-
+      */
        //analyze the instructions in each basic block
        List *BBlist = &(funcblock->funcBBlist);
        List_reset(BBlist);
@@ -603,6 +599,8 @@ void data_flow(List *funcBlocks, List *stringBlocks) {
        }
        //display_symbols();  
        //TODO set return value
+       Symbol *eax =  (is64bits) ? get_symbAt("%rax",0) : get_symbAt("%eax",0);
+       funcSymBlock->retValue = strdup(eax->value);
 
      }
 
@@ -648,7 +646,79 @@ void data_flow(List *funcBlocks, List *stringBlocks) {
    
  }
 
- void display_symbols() {
+//return the definition of a function
+//funcname(param list)
+//this will be called by the control flow analysis module
+
+char *getFuncDefinition(char *funcname) {
+
+  char *funcdef = calloc(1,40);
+  List_reset(funcSymTable);
+
+ // memset(funcdef, 0, 40);
+
+  for (int i=0; i<funcSymTable->numItems; i++) {
+
+    FuncSymBlock *funcsymblock = (FuncSymBlock *)List_getNextElement(funcSymTable);
+
+    if (!strcmp(funcname, funcsymblock->fname)) {
+
+      List *funcsymbols = &(funcsymblock->funcsymbols);
+      List_reset(funcsymbols);
+      strcpy(funcdef, funcname);
+      strcat(funcdef, "(");
+   
+      int parm=0;
+      for (int j=0; j<funcsymbols->numItems; j++) {
+        Symbol *symbol = (Symbol *)List_getNextElement(funcsymbols);
+        if (!strncmp(symbol->name, "par", 3)) {
+          strcat(funcdef,symbol->name );
+          strcat(funcdef,",");
+          parm++;
+        }
+      }
+
+      if (parm>0) funcdef[strlen(funcdef)-1]=0;  //delete the last ,
+      strcat(funcdef,"){\n\n");
+      break;
+    }
+  }
+
+  if (strlen(funcdef)==0)
+     printf("funcdef-> func %s not found in symbols table\n");
+  
+  return funcdef;
+
+}
+
+
+
+char *getFuncReturn(char *funcname) {
+
+  char *funcret = calloc(1,40);
+  List_reset(funcSymTable);
+
+  for (int i=0; i<funcSymTable->numItems; i++) {
+
+    FuncSymBlock *funcsymblock = (FuncSymBlock *)List_getNextElement(funcSymTable);
+
+    if (!strcmp(funcname, funcsymblock->fname)) {
+       strcpy(funcret, "return ");
+       strcat(funcret, funcsymblock->retValue);
+       strcat(funcret,"\n}\n\n");
+       break;
+    }
+  }
+
+  if (strlen(funcret)==0)
+     printf("funcRet-> func %s not found in symbols table\n");
+  
+  return funcret;
+
+}
+
+
+void display_symbols() {
 
       ListElement *current = globalSymbols->current;
       List_reset(globalSymbols);     //point to the first block
