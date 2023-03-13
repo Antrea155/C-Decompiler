@@ -83,7 +83,7 @@ typedef struct {
  char              *mnemonic;
  Operand           operands[6];
  uint8_t           opcount; //number of operands in the instruction
- bool              trap;  //a trap instruction or not
+ 
 } Instruction;
 
 

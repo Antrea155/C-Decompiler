@@ -9,6 +9,11 @@
 #include "models/dflow.h"
 #include "models/cflow.h"
 
+//UNIT_TEST is set to true for testing intervals, loops and conditionals
+//compile with testcf.c instead of main.c
+//no instructions are merged
+extern bool UNIT_TEST;
+
 extern List *stack;
 #define push( listElement ) _List_pushElement( stack, (ListElement *)(listElement) )
 #define pop()  (BBnode *)List_popElement( stack )
@@ -204,6 +209,8 @@ void  mergeCondInstructions(BasicBlock *bb, int condType) {
   char tempIns[100];
   memset(tempIns,0,100);
 
+  if (UNIT_TEST) return;
+
   List *parentInstructions = &(bb->ClikeInsL);
 
   if (condType == IF_1) {
@@ -273,6 +280,8 @@ void mergeLoopInstructions(IntervalBlock *intervalb) {
   List *loopheadIns = &(loophead->ClikeInsL);
   char tempIns[100];
   memset(tempIns,0,100);
+
+  if (UNIT_TEST) return;
 
   if (intervalb->looptype == PRE) {
 
@@ -399,7 +408,7 @@ bool canApplyT2(BasicBlock *bb) {
 
     if ((noOfBBchildren(bb) == 1)) {
          if ( !(bb->thenBB->merged) && (bb != bb->thenBB) && (bb->thenBB->Predecessors.numItems == 1) &&
-           (noOfBBchildren(bb->thenBB)<=1) )
+           (noOfBBchildren(bb->thenBB)<=1) && (bb != bb->thenBB->thenBB) )
            return true;
     }
     return false;
@@ -473,7 +482,7 @@ void  adjust_pred(BasicBlock *bb, BasicBlock *achild, BasicBlock *otherChild, in
     if ((pred->bbptr->pos != bb->pos) && 
          (( (cond !=IF_3 ) && (pred->bbptr->pos != otherChild->pos) ) || (cond == IF_3))
          ) {
-      printf("adjusting pred ->%d of achild ->%d\n", pred->bbptr->pos, achild->pos);
+      printf("adjusting predecessor ->%d of child ->%d\n", pred->bbptr->pos, achild->pos);
       if (pred->bbptr->thenBB == achild) pred->bbptr->thenBB = bb;
       else if (pred->bbptr->elseBB == achild) pred->bbptr->elseBB = bb;
       else printf("could not adjust pred\n");
@@ -556,7 +565,7 @@ bool ifElsecond(BasicBlock *bb, List *interval) {
 
 void mergeCond(BasicBlock *bb , int condType) {
 
-  printf("will merge conditional bb [%s %d]\n", bb->label, bb->pos);
+  printf("will merge conditional at bb -> [%s %d]\n", bb->label, bb->pos);
 
    // printf("will merge conditional bb [%s %d]\n", bb->label, bb->pos);
    // while (canApplyT2(bb->thenBB)) mergebb(bb->thenBB); //TODO do I Need this?
@@ -568,7 +577,7 @@ void mergeCond(BasicBlock *bb , int condType) {
 
       //  merge if (leftop op right op) with {then-instructions}
       // merge with else-instructions
-        printf("mergec case 1 ifcond\n");
+        printf("merge case 1 ifcond\n");
         mergeCondInstructions(bb, condType);
 
         //merge links
@@ -591,7 +600,7 @@ void mergeCond(BasicBlock *bb , int condType) {
 
       // reverse operator and merge with else instructions -> if (leftop !op rightop) {else intructions}
       // merge with then instructions
-        printf("mergec case 2 ifcond\n");
+        printf("merge case 2 ifcond\n");
         mergeCondInstructions(bb, condType);
 
         //merge links
@@ -616,7 +625,7 @@ void mergeCond(BasicBlock *bb , int condType) {
        //bb's then and else point to same child
        //this can occur when we have nested ifs and after the inner if is merged
        //merge if (leftop op rightop) with {then-instructions}
-        printf("mergec case 3 ifcond\n");
+        printf("merge case 3 ifcond\n");
         mergeCondInstructions(bb, condType);
 
         //merge links
@@ -637,7 +646,7 @@ void mergeCond(BasicBlock *bb , int condType) {
 
     } else {
 
-      printf("mergec case 4 ifelse\n");
+      printf("merge case 4 ifelse\n");
        //merge if (leftop !op rightop)  {else instructions}
       //merge else {then intructions}
       mergeCondInstructions(bb, condType);
@@ -751,6 +760,8 @@ bool check_for_loops(IntervalBlock *intervalb) {
   intervalb->loophead = intervalb->ihead;
   List *loopnodes = List_new(&(intervalb->loopNodes));
   
+  List_pushElement_back(loopnodes,newBBnode2(intervalb->loophead));
+
   for (int i=0; i<latchnodes->numItems; i++) { 
 
     List_destroy(stack);
@@ -784,6 +795,7 @@ bool check_for_loops(IntervalBlock *intervalb) {
 
   printf("loop found in interval with loop head ->[%s %d]\n",intervalb->ihead->label, intervalb->loophead->pos);
   printf("loop nodes found ->%d\n", loopnodes->numItems);
+  print_loop_nodes(loopnodes);
   return true;
     
 
@@ -988,6 +1000,8 @@ void control_flow(List *funcBlocks) {
 
       printf("\ncontrol flow analysis for function %s completed\n",funcblock->funcName);
 
+      if (UNIT_TEST) return;
+
       //add on front of instructions in limit node the function definition - func(parm1, parm2, ..) {
       char *funcdef = getFuncDefinition(funcblock->funcName);
       BasicBlock *limitnode = get_bb_in_limit_interval();
@@ -1090,5 +1104,25 @@ void print_func_ClikeIns() {
         printf("\n");
 
       }
+
+}
+
+ void print_loop_nodes(List *loop_nodes) {
+
+       
+        ListElement *current = loop_nodes->current;
+        List_reset(loop_nodes);     //point to the first block
+        printf("Loop Nodes -> ");
+        for (int i = 0; i < loop_nodes->numItems; i++)  {
+
+          BBnode *bb = (BBnode *)List_getNextElement(loop_nodes);
+          printf("[%d %s] ",bb->bbptr->pos, bb->bbptr->label);
+
+        }  
+        loop_nodes->current = current;
+          
+      
+    printf("\n");
+     
 
 }

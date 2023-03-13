@@ -20,6 +20,8 @@
 void control_flow(List *funcBlocks);
 void display_successors(List *funcblocks);
 void display_predecessors(List *funcBlocksP);
+bool is64bits = false;
+bool UNIT_TEST =true;
 
 List *funcBlocks;         //list of pointers to Blocks
   
@@ -133,8 +135,6 @@ int main() {
 
     control_flow(funcBlocks);
 
-     display_successors(funcBlocks);
-    display_predecessors(funcBlocks);
 }
 
 

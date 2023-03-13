@@ -25,10 +25,6 @@ typedef struct   {
   char             *parmtypes[MAX_PARMS]; //the parameter types of the function in the assembly listing
   //SYMTYPE          retType;
   char             *retValue;
-  int              maxLocalOffset;
-  int              maxLocals;
-  int              maxParOffset;
-  int              maxPars;
   List             funcsymbols;
 
 } FuncSymBlock;

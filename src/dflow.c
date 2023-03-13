@@ -239,7 +239,7 @@ Symbol *get_symbAt(char *index1, int index2) {
        Symbol *newSym= new_symbol(0,index2);
        newSym->name = genUniqName(index2);
        newSym->value = strdup(newSym->name);
-       //TO DO check maxLocaOffset of FuncSymBlock
+       
        add_symbol(newSym);
      
        printf("get_symbAt->symbol not found. added %d\n",index2);  
@@ -670,7 +670,7 @@ char *getFuncDefinition(char *funcname) {
    
       int parm=0;
       for (int j=0; j<funcsymbols->numItems; j++) {
-        Symbol *symbol = (Symbol *)List_getNextElement(funcsymbols);
+        Symbol *symbol = (Symbol *)List_getPrevElement(funcsymbols);
         if (!strncmp(symbol->name, "par", 3)) {
           strcat(funcdef,symbol->name );
           strcat(funcdef,",");
@@ -692,6 +692,9 @@ char *getFuncDefinition(char *funcname) {
 }
 
 
+//return the return value of a function
+//return ..... 
+//this will be called by the control flow analysis module
 
 char *getFuncReturn(char *funcname) {
 
@@ -705,7 +708,7 @@ char *getFuncReturn(char *funcname) {
     if (!strcmp(funcname, funcsymblock->fname)) {
        strcpy(funcret, "return ");
        strcat(funcret, funcsymblock->retValue);
-       strcat(funcret,"\n}\n\n");
+       strcat(funcret,";\n}\n\n");
        break;
     }
   }
