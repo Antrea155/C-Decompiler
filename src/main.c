@@ -1,9 +1,12 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
 #include "utils/ll.h"
 
-#define VERBOSE_PARSE false
-#define VERBOSE_CFG true
-#define VERBOSE_DF true
+bool VERBOSE_PARSE = false;
+bool VERBOSE_CFG = false;
+bool VERBOSE_DF = false;
+bool GEN_GRAPH = false;
 
 void parse_assembly(FILE* fpointer, List *funBlocks, List *stringBlocks);
 void print_blocks(List *Blocks);
@@ -15,6 +18,7 @@ void generate_cfg_dot_images(List *funcblocks);
 void data_flow(List *funcBlocks, List *stringBlocks);
 void display_dfins(List *funcBlocks);
 void control_flow(List *funcBlocks);
+void  print_help(void);
 //void display_BBs_seq(List *funcBlocks);
 //void display_intervals(List *funcBlocks);
 bool is64bits = false;
@@ -24,7 +28,8 @@ int glob_veriable = 2;
 int main(int argc, char* argv[]) {  // argc is the number of inputs thats entered in the commandline
                                     // argv is an array that holds those values
 
-    FILE *fPointer;     
+    FILE *fPointer;   
+    char cmdOption[20], assFile[25];  
     
     List *funcBlocksP;         //list of pointers to Blocks
     funcBlocksP = List_new(NULL);  //create the list of blocks
@@ -37,11 +42,72 @@ int main(int argc, char* argv[]) {  // argc is the number of inputs thats entere
     if(argc == 1)
     {
         printf("an assembly file listing from https://godbolt.org is needed\n");
+        printf("Usage: dec [OPTIONS] assembly_file\n");
+        printf("Try dec --help for more information\n");
         exit(1);
     }
 
+   //parse command line argumnets
 
-    fPointer = fopen(argv[1], "r+"); //opens the assembly file which is stored in argv[1]
+    for (int i=1; i<argc; i++) {
+
+       if ( *argv[ i ] == '-' ) {
+		     	++argv[ i ]; //next char same arg
+			    if ( *argv[ i ] == '\0' ) //end of arg
+			    	++i; //go to next arg
+			    else if ( *argv[ i ] == '-' ) { //second -
+			    	++argv[ i ];
+				    if ( *argv[ i ] == '\0' )
+				     	++i;
+				    strcpy(cmdOption,argv[ i ]); //cmdOption = mode,graph,verbose,help
+
+            if (!strcmp(cmdOption,"mode")) {
+              ++i;
+              if (!strcmp("32",argv[i])) {
+                is64bits = false;
+                printf("32bits assembly set\n");
+              } else if (!strcmp("64",argv[i])) {
+                is64bits = true;
+                printf("64bits assembly set\n");
+              } else {
+                printf("invalid mode option - should be 32 or 64\n");
+                exit(1);
+              }
+            } else if (!strcmp(cmdOption,"graph")) {
+              GEN_GRAPH = true;
+              printf("graph image genaration set\n");        
+            } else if (!strcmp(cmdOption,"verbose")) {
+              ++i;
+              if (!strcmp("parser",argv[i])) {
+                VERBOSE_PARSE = true;
+                printf("parser verbose set\n");
+              } else if (!strcmp("cfg",argv[i])) {
+                VERBOSE_CFG = true;
+                printf("cfg verbose set\n");
+              } else if (!strcmp("data",argv[i])) {
+                VERBOSE_DF = true;
+                printf("data verbose set\n");
+              } else {
+                printf("invalid verbose option - should be parser, cfg or data\n");
+                exit(1);
+              }
+            } else if (!strcmp(cmdOption,"help")) {
+              
+              print_help();
+              exit(1); 
+            } else {
+              printf("invalid option\n");
+              exit(1);
+            }
+         }
+        } else
+        strcpy(assFile,argv[i]);
+            
+    
+    }
+
+
+    fPointer = fopen(assFile, "r+"); 
     if (!fPointer) {
       printf("could not open assembly file\n");
       exit(1);
@@ -62,10 +128,12 @@ int main(int argc, char* argv[]) {  // argc is the number of inputs thats entere
    }
     
     create_CFG(funcBlocksP);
+    if (GEN_GRAPH) {
+      generate_cfg_dot_images(funcBlocksP);
+    }
     if (VERBOSE_CFG) {
       display_successors(funcBlocksP);
       display_predecessors(funcBlocksP);
-      generate_cfg_dot_images(funcBlocksP);
     }
 
     data_flow(funcBlocksP, stringBlocksP);
@@ -76,4 +144,15 @@ int main(int argc, char* argv[]) {  // argc is the number of inputs thats entere
     control_flow(funcBlocksP);
    // display_BBs_seq(funcBlocksP);
     //display_intervals(funcBlocksP);
+}
+
+void print_help() {
+
+  printf("Usage: dec [ OPTIONS ] assembly_file\n");
+  printf("recover C code from an assembly listing in AT&T syntax\n");
+  printf("Options:\n");
+  printf("--mode 32/64                the assembly is in 32 or 64 bits instructions\n");
+  printf("--graph                     the CFG module will generate an image of the control flow\n");
+  printf("--verbose parser/cfg/data   enable verbose mode for the specified module\n");
+  printf("--help                      print options help\n");
 }

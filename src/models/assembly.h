@@ -79,7 +79,6 @@ typedef struct {
  x86_insn          mnem_id;
  InstrGroup       grpid;
  uint8_t          size;
- //unsigned short    flags;  //COND, JMP, CALL, RET , etc
  char              *mnemonic;
  Operand           operands[6];
  uint8_t           opcount; //number of operands in the instruction
