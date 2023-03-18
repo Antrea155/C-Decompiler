@@ -27,6 +27,8 @@ void display_BBs_seq();
 void print_interval(IntervalBlock *interval);
 void display_allfuncIntervals();
 void print_func_ClikeIns();
+void save_func_ClikeIns();
+void print_loop_nodes(List *loop_nodes);
 
 List *curBBlist;
 List *curAllfuncIntervals;
@@ -183,6 +185,15 @@ BasicBlock *get_bb_in_cfg(int pos, List *BBlist) {
        printf ("  bb with pos %d not found in bblist\n",pos);
        return NULL;
 } 
+
+//return true if a return statement has already been added in C like instructions
+bool returnAdded(List *clikeInsList) {
+
+  ClikeIns *LastIns = (ClikeIns *)List_getTail(clikeInsList); 
+  if (!strncmp(LastIns->cins,"return",6)) return true;
+  return false;
+
+}
 
 
 //apend the C like instructions in the thenChild bb to the
@@ -1007,11 +1018,16 @@ void control_flow(List *funcBlocks) {
       BasicBlock *limitnode = get_bb_in_limit_interval();
       List_pushElement(&(limitnode->ClikeInsL), newClikeIns2(funcdef));
 
-      //add at the end return value +}\n\n
-      char *funcRet = getFuncReturn(funcblock->funcName);
-      List_pushElement_back(&(limitnode->ClikeInsL), newClikeIns2(funcRet));
+      //add at the end return value if not already exists
+      bool returnExists = returnAdded(&(limitnode->ClikeInsL));
+      if (!returnExists) {
+        char *funcRet = getFuncReturn(funcblock->funcName);
+        List_pushElement_back(&(limitnode->ClikeInsL), newClikeIns2(funcRet));
+      } else
+        List_pushElement_back(&(limitnode->ClikeInsL), newClikeIns2("\n}"));
       
       print_func_ClikeIns();
+      save_func_ClikeIns();
 
   } //end of control flow analysis of current function. get next one
 
@@ -1102,6 +1118,37 @@ void print_func_ClikeIns() {
         }
 
         printf("\n");
+
+      }
+
+}
+
+void save_func_ClikeIns() {
+
+    List_reset(curBBlist);
+
+    printf("\n\nSaving C like instructions in recover.c\n");
+    FILE *fPointer;
+    fPointer = fopen("recover.c", "a+"); 
+    if (!fPointer) {
+      printf("could not open recover.c file\n");
+      exit(1);
+    }
+
+      for (int i = 0; i < curBBlist->numItems; i++) {
+        
+        BasicBlock *bb = (BasicBlock *)List_getNextElement(curBBlist);
+        if (bb->merged) continue;
+        List *clikeIns = &(bb->ClikeInsL);
+        List_reset(clikeIns);
+        
+        for (int j=0; j<clikeIns->numItems; j++) {
+          ClikeIns *ins = (ClikeIns *)List_getNextElement(clikeIns);
+          fprintf(fPointer,"%s",ins->cins);
+        }
+
+        fprintf(fPointer,"\n\n");
+        fclose(fPointer);
 
       }
 

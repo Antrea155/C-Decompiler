@@ -41,32 +41,31 @@ char  *genUniqName( int offset )
         strcpy(name,"par_");
         strcat(name, buf);
     }
-    //printf("uniq->%s\n",name);
+    //dlprintf(1,"uniq->%s\n",name);
 	return name;
 }
 
 void handle_pars(char *funcName, FuncSymBlock *fsb) {
 
     char funcn[15]; memset(funcn,0,15);
-    //char parms[50]; memset(parms,0,50);
+    fsb->fname = strdup(funcName) ;
     char *pos = strchr(funcName ,'('); 
-    if (!pos) fsb->fname = strdup(funcName) ;
+    if (!pos) return;
     else {
         strncpy(funcn, funcName, strlen(funcName)-strlen(pos));
-        fsb->fname = strdup(funcn);
         //save the par types in (partype1, parype2,...)
         
        
         char *parms = strdup(pos+1);
         parms[strlen(parms)-1]=0;
-        //printf("parms->%s\n",parms);
+        //dlprintf(1,"parms->%s\n",parms);
         char *parm = strtok(parms, ",");        
         int index = 0;
        /*Run over instruction line (word-by-word)*/
         while (parm != NULL) {
           if (parm[0]==' ') parm=parm+1;
           fsb->parmtypes[index] = strdup(parm);
-         // printf("parm->%s<-\n",fsb->parmtypes[index]);
+         // dlprintf(1,"parm->%s<-\n",fsb->parmtypes[index]);
           index++;
           parm = strtok(NULL, ",");
         }
@@ -83,7 +82,7 @@ char *get_stringLabel(char *label) {
         StringBlock *sb = (StringBlock *)List_getNextElement(stringLabels);
         if (!strcmp(label,sb->label)) {
              stringLabels->current = current;
-             printf("   found string %s for label %s\n",sb->string, label);
+             dlprintf(1,"   found string %s for label %s\n",sb->string, label);
              return sb->string;
         }
 
@@ -168,7 +167,7 @@ void add_symbol(Symbol *sym) {
     else if (sym->index2) {
        List_pushElement_back(curFuncSymbs,sym);
     } else 
-       printf("add_symbol-> index not specified\n");
+       dlprintf(1,"add_symbol-> index not specified\n");
 
 }
 
@@ -217,7 +216,7 @@ Symbol *get_symbAt(char *index1, int index2) {
        }
      
        globalSymbols->current = current;
-       printf("get_symbAt->symbol not found %s\n",index1);  
+       dlprintf(1,"get_symbAt->symbol not found %s\n",index1);  
        return NULL;
 
    } else if (index2) {
@@ -242,11 +241,11 @@ Symbol *get_symbAt(char *index1, int index2) {
        
        add_symbol(newSym);
      
-       printf("get_symbAt->symbol not found. added %d\n",index2);  
+       dlprintf(1,"get_symbAt->symbol not found. added %d\n",index2);  
        return newSym;
 
    } else {
-     printf("get_symbAt->an index must be given\n");
+     dlprintf(1,"get_symbAt->an index must be given\n");
      return NULL;
    }
 
@@ -276,13 +275,13 @@ void upd_symbAt(char *index1, int index2, Symbol *newSym) {
        }
      
        globalSymbols->current = current;
-       printf("symbol not found %s\n",index1);  
+       dlprintf(1,"symbol not found %s\n",index1);  
        return NULL;
 
    } else if (index2) {
 
    } else {
-     printf("an index must be given\n");
+     dlprintf(1,"an index must be given\n");
      return NULL;
    }
 
@@ -290,7 +289,7 @@ void upd_symbAt(char *index1, int index2, Symbol *newSym) {
 }
 
 void analyze_inst(Instruction *ins, BasicBlock *bb){
-    printf("    analyzing Instruction->%s\n",ins->mnemonic);
+    dlprintf(1,"    analyzing Instruction->%s\n",ins->mnemonic);
     char temp[50];
     int insGrpId = ins->grpid;
     int op1type1 = ins->operands[0].type1;
@@ -314,7 +313,7 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
             symbol = (Symbol *)calloc(1,sizeof(Symbol));
             symbol->value = strdup(string);
             push(symbol);
-        } else printf("  ->>instruction not analyzed<<---\n");
+        } else dlprintf(1,"  ->>instruction not analyzed<<---\n");
 
    } else if (insGrpId == INS_GRP_CALL) {
 
@@ -322,7 +321,7 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
         strcpy(temp,ins->operands[0].op_string);
         strcat(temp,"(");
 
-        List_reset(stack);     printf("parms in stack->%d\n",stack->numItems);
+        List_reset(stack);     dlprintf(1,"parms in stack->%d\n",stack->numItems);
 
         for (int i = 0; i < (stack->numItems)-1; i++) {
             symbol = pop();
@@ -333,7 +332,7 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
 
         reg = (is64bits) ? get_symbAt("%rax",0): get_symbAt("%eax",0);
         reg->value = strdup(temp);
-        printf("call->%s\n",reg->value);
+        dlprintf(1,"call->%s\n",reg->value);
         List_destroy(stack);
         //TODO before pop save in callees funcsymblock
 
@@ -343,7 +342,7 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
         if ((op1type1 == OP_TYPE_REG) && (op2type1 == OP_TYPE_REG)) {
             if ((op2type2 == OP_TYPE_ARG) && (strlen(ins->mnemonic) == 4)) { //x86-64 places pars for callee in edi, esi,..
               reg = cpy_sym(get_symbAt(ins->operands[0].value.reg,0));
-              push(reg); printf("pushed in stack\n");
+              push(reg); dlprintf(1,"pushed in stack\n");
             } else {
               reg = get_symbAt(ins->operands[0].value.reg,0);
               upd_symbAt(ins->operands[1].value.reg,0,reg);
@@ -356,20 +355,23 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
             push(symbol);
 
         } else if ((op1type1 == OP_TYPE_REG) && (op2type2 == OP_TYPE_LABEL)) {
-              printf("  ->>instruction not analyzed<<---\n");
+              dlprintf(1,"  ->>instruction not analyzed<<---\n");
 
         } else if ((op1type2 == OP_TYPE_NUM) && (op2type2 == OP_TYPE_SBP)) {
             var = get_symbAt(0,ins->operands[1].ptr.offset);
-            printf("Ins->%s = %s;\n",var->name,ins->operands[0].value.imm);
+            dlprintf(1,"Ins->%s = %s;\n",var->name,ins->operands[0].value.imm);
             sprintf(temp, "%s = %s; ",var->name,ins->operands[0].value.imm);
             add_toClikeIns(temp, bb);
 
         } else if ((op1type2 == OP_TYPE_NUM) && (op2type1 == OP_TYPE_REG)) {
             reg = get_symbAt(ins->operands[1].value.reg,0);
             reg->value = strdup(ins->operands[0].value.imm); //TODO if rax could be the return value
-            if (!strncmp(reg->index1,"%rax",4) ) printf("rax->%s\n",reg->value);
-            if (!strncmp(reg->index1,"%eax",4) ) printf("eax->%s\n",reg->value);
- 
+            if (!strncmp(reg->index1,"%rax",4) ) dlprintf(1,"rax->%s\n",reg->value);
+            if (!strncmp(reg->index1,"%eax",4) ) {
+              sprintf(temp, "return %s;",reg->value);
+              add_toClikeIns(temp, bb);
+              dlprintf(1,"eax->%s\n",reg->value);
+            }
         } else if ((op1type2 == OP_TYPE_SBP) && (op2type1 == OP_TYPE_REG)) {
             var = get_symbAt(0,ins->operands[0].ptr.offset);
             reg = get_symbAt(ins->operands[1].value.reg,0);
@@ -385,46 +387,46 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
                 var->name = genUniqName(abs(ins->operands[1].ptr.offset));
                 var->value = strdup(var->name);
             }
-            printf("Ins2->%s = %s;\n",var->name,reg->value);
+            dlprintf(1,"Ins2->%s = %s;\n",var->name,reg->value);
             sprintf(temp, "%s = %s; ",var->name,reg->value);
             if (reg->value[0]!='%') add_toClikeIns(temp, bb);
 
         } else if ((op1type1 == OP_TYPE_REG) && (op2type2 == OP_TYPE_SBP)) {
             reg = get_symbAt(ins->operands[0].value.reg,0);
             var = get_symbAt(0,ins->operands[1].ptr.offset);
-            printf("Ins->%s = %s;\n",var->name,reg->value);
+            dlprintf(1,"Ins->%s = %s;\n",var->name,reg->value);
             sprintf(temp,"%s = %s; ",var->name,reg->value);
             if (reg->value[0]!='%') add_toClikeIns(temp, bb);
 
-        } else printf("  ->>instruction not analyzed<<---\n");
+        } else dlprintf(1,"  ->>instruction not analyzed<<---\n");
 
    } else if (insGrpId == INS_GRP_ADD) {
 
         if ((op1type2 == OP_TYPE_NUM) && (op2type2 == OP_TYPE_SBP)) {
             var = get_symbAt(0,ins->operands[1].ptr.offset);
-            printf("Ins->%s+= %s;\n",var->name,ins->operands[0].value.imm);
+            dlprintf(1,"Ins->%s+= %s;\n",var->name,ins->operands[0].value.imm);
             sprintf(temp,"%s+= %s; ",var->name,ins->operands[0].value.imm);
             add_toClikeIns(temp, bb);
         } else if ((op1type1 == OP_TYPE_REG) && (op2type2 == OP_TYPE_SBP)) {
             reg = get_symbAt(ins->operands[0].value.reg,0);
             var = get_symbAt(0,ins->operands[1].ptr.offset);
-            printf("Ins->%s+= %s;\n",var->name,reg->value);
+            dlprintf(1,"Ins->%s+= %s;\n",var->name,reg->value);
             sprintf(temp,"%s+= %s; ",var->name,reg->value);
             add_toClikeIns(temp, bb);
         } else if ((op1type1 == OP_TYPE_REG) && (op2type1 == OP_TYPE_PTR)) {
             reg = get_symbAt(ins->operands[0].value.reg,0);
             var = get_symbAt(ins->operands[1].value.reg,0)->reference;
-            printf("Ins->%s+= %s;\n",var->name,reg->value);
+            dlprintf(1,"Ins->%s+= %s;\n",var->name,reg->value);
             sprintf(temp, "%s+= %s; ",var->name,reg->value);
             add_toClikeIns(temp, bb);
-        } else printf("  ->>instruction not analyzed<<---\n");
+        } else dlprintf(1,"  ->>instruction not analyzed<<---\n");
 
    } else if (insGrpId == INS_GRP_SUB) {
 
         if ((op1type2 == OP_TYPE_NUM) && (op2type2 == OP_TYPE_STR)) {
-            if (seenOnce == false) {seenOnce = true; printf("seenOnce is true\n");}
+            if (seenOnce == false) {seenOnce = true; dlprintf(1,"seenOnce is true\n");}
         } else if (op2type2 == OP_TYPE_STR) ; //ignore mem allocation for stack 
-        else printf("  ->>instruction not analyzed<<---\n");
+        else dlprintf(1,"  ->>instruction not analyzed<<---\n");
 
    } else if (insGrpId == INS_GRP_CMP) {
 
@@ -433,29 +435,29 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
          reg = get_symbAt(ins->operands[1].value.reg,0);
          bb->leftOp = strdup(reg->value);
          bb->rightOp = strdup(var->name);
-         printf("left->%s, right->%s\n",bb->leftOp,bb->rightOp);
+         dlprintf(1,"left->%s, right->%s\n",bb->leftOp,bb->rightOp);
 
        } else if ((op1type1 == OP_TYPE_REG) && (op2type1 == OP_TYPE_REG)) {
          reg = get_symbAt(ins->operands[0].value.reg,0);
          reg2 = get_symbAt(ins->operands[1].value.reg,0);
          bb->leftOp = strdup(reg->value);
          bb->rightOp = strdup(reg2->value);
-         printf("left->%s, right->%s\n",bb->leftOp,bb->rightOp);
+         dlprintf(1,"left->%s, right->%s\n",bb->leftOp,bb->rightOp);
 
        } else if ((op1type1 == OP_TYPE_REG) && (op2type2 == OP_TYPE_SBP)) {
          reg = get_symbAt(ins->operands[0].value.reg,0);
          var = get_symbAt(0,ins->operands[1].ptr.offset);
          bb->leftOp = strdup(var->name);
          bb->rightOp = strdup(reg->value);
-         printf("left->%s, right->%s\n",bb->leftOp,bb->rightOp);
+         dlprintf(1,"left->%s, right->%s\n",bb->leftOp,bb->rightOp);
 
        } else if ((op1type2 == OP_TYPE_NUM) && (op2type2 == OP_TYPE_SBP)) {
          var = get_symbAt(0,ins->operands[1].ptr.offset);
          bb->leftOp = strdup(var->name);
          bb->rightOp = strdup(ins->operands[0].value.imm);
-         printf("left->%s, right->%s\n",bb->leftOp,bb->rightOp);
+         dlprintf(1,"left->%s, right->%s\n",bb->leftOp,bb->rightOp);
 
-       } else printf("  ->>instruction not analyzed<<---\n");
+       } else dlprintf(1,"  ->>instruction not analyzed<<---\n");
 
    } else if (insGrpId == INS_GRP_MULT) {
 
@@ -464,9 +466,9 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
          reg = get_symbAt(ins->operands[1].value.reg,0);
          sprintf(temp,"(%s)*%s",reg->value,var->name);
          reg->value = strdup(temp);
-         printf("reg->%s\n",reg->value);
+         dlprintf(1,"reg->%s\n",reg->value);
 
-      } else printf("  ->>instruction not analyzed<<---\n");
+      } else dlprintf(1,"  ->>instruction not analyzed<<---\n");
 
    } else if (insGrpId == INS_GRP_DIV) {
     
@@ -476,10 +478,10 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
         symbol = (ins->size == 8 ) ? get_symbAt("%rax",0) : get_symbAt("%eax",0);
         sprintf(temp,"(%s)%%%s",symbol->value,reg->value);
         reg2->value = strdup(temp);
-        (ins->size == 8 ) ? printf("rdx->%s\n",reg2->value) : printf("edx->%s\n",reg2->value);
+        //(ins->size == 8 ) ? printf("rdx->%s\n",reg2->value) : printf("edx->%s\n",reg2->value);
         sprintf(temp,"(%s)/%s",symbol->value,reg->value);
         symbol->value = strdup(temp);
-        (ins->size == 8 ) ? printf("rax->%s\n",symbol->value) : printf("eax->%s\n",symbol->value);
+        //(ins->size == 8 ) ? printf("rax->%s\n",symbol->value) : printf("eax->%s\n",symbol->value);
 
       } else if (op1type2 == OP_TYPE_SBP)  {
         reg = (is64bits) ? get_symbAt("%rax",0) : get_symbAt("%eax",0); 
@@ -487,8 +489,8 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
         sprintf(temp,"(%s)/%s",reg->value,var->name);
         //TODO change edx value
         reg->value = strdup(temp);
-        printf("reg->%s\n",reg->value);
-      } else printf("  ->>instruction not analyzed<<---\n");
+        dlprintf(1,"reg->%s\n",reg->value);
+      } else dlprintf(1,"  ->>instruction not analyzed<<---\n");
 
    } else if (insGrpId == INS_GRP_LEA) {
 
@@ -498,17 +500,17 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
          reg->reference = var;
          sprintf(temp,"&%s",var->name);
          reg->value = strdup(temp);
-         printf("reg->%s\n",reg->value);
-       } else printf("  ->>instruction not analyzed<<---\n");
+         dlprintf(1,"reg->%s\n",reg->value);
+       } else dlprintf(1,"  ->>instruction not analyzed<<---\n");
 
    } else if (insGrpId == INS_GRP_INC) {
 
       if (op1type1 == OP_TYPE_PTR) {
         symbol = get_symbAt(ins->operands[0].value.reg,0)->reference;
-        printf("ins->++%s;\n",symbol->name);
+        dlprintf(1,"ins->++%s;\n",symbol->name);
         sprintf(temp,"++%s; ",symbol->name);
         add_toClikeIns(temp, bb);
-       } else printf("  ->>instruction not analyzed<<---\n");
+       } else dlprintf(1,"  ->>instruction not analyzed<<---\n");
 
    } else if (insGrpId == INS_GRP_TEST) {
 
@@ -521,8 +523,8 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
             bb->leftOp = strdup(temp);
          }
          bb->rightOp = strdup("0");
-         printf("left->%s, right->%s\n",bb->leftOp,bb->rightOp);
-       } else  printf("  ->>instruction not analyzed<<---\n");
+         dlprintf(1,"left->%s, right->%s\n",bb->leftOp,bb->rightOp);
+       } else  dlprintf(1,"  ->>instruction not analyzed<<---\n");
 
    } else if (insGrpId == INS_GRP_CSET) {
 
@@ -531,12 +533,12 @@ void analyze_inst(Instruction *ins, BasicBlock *bb){
          char *Coper = get_Coper(ins->mnemonic);
          sprintf(temp,"(%s%s%s)",bb->leftOp,Coper,bb->rightOp);
          reg->value = strdup(temp);
-         printf("reg->%s\n",reg->value);
+         dlprintf(1,"reg->%s\n",reg->value);
 
-       } else  printf("  ->>instruction not analyzed<<---\n");
+       } else  dlprintf(1,"  ->>instruction not analyzed<<---\n");
 
    } else
-     printf("  ->>instruction not analyzed<<---\n");
+     dlprintf(1,"  ->>instruction not analyzed<<---\n");
 
 }
 
@@ -565,17 +567,11 @@ void data_flow(List *funcBlocks, List *stringBlocks) {
       
        handle_pars(funcblock->funcName,funcSymBlock); 
        
-       printf("\n\ndata flow analysis for function -> %s\n",funcSymBlock->fname);
+       dlprintf(1,"\n\ndata flow analysis for function -> %s\n",funcSymBlock->fname);
        List_pushElement_back(funcSymTable, funcSymBlock );
        curFuncSymbs = List_new(&funcSymBlock->funcsymbols); 
       
-      //TODO do I need this?
-      /*
-       add_symbol(new_symbol(funcSymBlock->fname,0));  //type= LONG, size=0, val="" add to global sym list
-       Symbol *tmpSym = (Symbol *)calloc(1,sizeof(Symbol)); 
-       upd_symbAt(funcSymBlock->fname,0,tmpSym);
-       free(tmpSym);  
-      */
+
        //analyze the instructions in each basic block
        List *BBlist = &(funcblock->funcBBlist);
        List_reset(BBlist);
@@ -585,7 +581,7 @@ void data_flow(List *funcBlocks, List *stringBlocks) {
           BasicBlock *bb = (BasicBlock *)List_getNextElement(BBlist);
           List *instructions = &(bb->Instructions);
           List_reset(instructions);
-          printf("\nanalyzing basic block->%s\n",bb->label);
+          dlprintf(1,"\nanalyzing basic block->%s\n",bb->label);
 
           List_new(&bb->ClikeInsL);  //list to hold the new C like instructions for the block
 
@@ -663,9 +659,16 @@ char *getFuncDefinition(char *funcname) {
 
     if (!strcmp(funcname, funcsymblock->fname)) {
 
+      dlprintf(1,"getting function definition for func -> %s\n",funcname);
       List *funcsymbols = &(funcsymblock->funcsymbols);
       List_reset(funcsymbols);
-      strcpy(funcdef, funcname);
+      //remove parmtypes from funcname first
+      char *pos = strchr(funcname ,'('); 
+      if (pos) 
+        strncpy(funcdef, funcname, strlen(funcname)-strlen(pos));
+      else
+        strcpy(funcdef, funcname);
+
       strcat(funcdef, "(");
    
       int parm=0;
@@ -685,7 +688,9 @@ char *getFuncDefinition(char *funcname) {
   }
 
   if (strlen(funcdef)==0)
-     printf("funcdef-> func %s not found in symbols table\n");
+    { dlprintf(1,"funcdef for func -> %s not found in symbols table\n",funcname);}
+  else
+    {dlprintf(1,"funcdef for -> func %s is ->%s\n",funcname,funcdef);}
   
   return funcdef;
 
@@ -703,6 +708,7 @@ char *getFuncReturn(char *funcname) {
 
   for (int i=0; i<funcSymTable->numItems; i++) {
 
+    dlprintf(1,"getting function retrun for func -> %s\n",funcname);
     FuncSymBlock *funcsymblock = (FuncSymBlock *)List_getNextElement(funcSymTable);
 
     if (!strcmp(funcname, funcsymblock->fname)) {
@@ -714,7 +720,9 @@ char *getFuncReturn(char *funcname) {
   }
 
   if (strlen(funcret)==0)
-     printf("funcRet-> func %s not found in symbols table\n");
+     {dlprintf(1,"funcRet for func -> %s not found in symbols table\n", funcname);}
+   else
+    {dlprintf(1,"funcdef for -> func %s is ->%s\n",funcname,funcret);}
   
   return funcret;
 

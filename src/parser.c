@@ -132,10 +132,10 @@ char *convertTo64reg(char *reg) {
 }
 
 char *convertTo4(char *reg) {
-   if (!strncmp(reg,"%ax",3)) {printf("converted to eax\n");return("%eax");}
-   else if (!strncmp(reg,"%al",3)) {printf("converted to eax\n");return("%eax");}
-   else if (!strncmp(reg,"%bx",3)) {printf("converted to ebx\n");return("%ebx");}
-   else if (!strncmp(reg,"%bl",3)) {printf("converted to ebx\n");return("%ebx");}
+   if (!strncmp(reg,"%ax",3)) {dlprintf(1,"converted to eax\n");return("%eax");}
+   else if (!strncmp(reg,"%al",3)) {dlprintf(1,"converted to eax\n");return("%eax");}
+   else if (!strncmp(reg,"%bx",3)) {dlprintf(1,"converted to ebx\n");return("%ebx");}
+   else if (!strncmp(reg,"%bl",3)) {dlprintf(1,"converted to ebx\n");return("%ebx");}
    else return reg;
 }
 
@@ -163,7 +163,7 @@ int process_instruction_details(Instruction *ins) {
         //ins->flags |= INS_FLAG_CSET;
         return 1;
       } else {
-        printf("invalid instruction ->%s\n",ins->mnemonic);
+        dlprintf(1,"invalid instruction ->%s\n",ins->mnemonic);
         return 0;
       }
     }
@@ -223,7 +223,7 @@ void process_operand(char *op_string, Operand *op) {
 
     } 
     else
-        printf("invalid operand ->%s\n",op_string);
+        dlprintf(1,"invalid operand ->%s\n",op_string);
     
 
 }
@@ -232,7 +232,7 @@ int process_instruction(char *inst, Instruction **instP) {
 
     char *currentWord;
 
-    printf("  processing inst-> %s\n",inst);
+    dlprintf(1,"  processing inst-> %s\n",inst);
     Instruction *instructionP;
   
     // allocate memory for intruction structure and initialize fields to 0
@@ -312,6 +312,7 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
     char testline[MAX_CHARS_IN_LINE];
 
     printf("instructions table loded. size ->%d\n", instr_table_length);
+    printf("Parsing assembly file\n");
     
 
     FOREVER     //endles loop
@@ -344,8 +345,8 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
 
                 currentLine[strlen(currentLine)-1]=0; 
                 stringblockP->string = strdup(strchr(strstr(currentLine,".string"), ' ')+1);
-                if (stringblockP->string) printf("found string label %s with string ->%s\n",stringblockP->label,stringblockP->string);
-                else printf("string for label %s not found\n", stringblockP->label);
+                if (stringblockP->string) {dlprintf(1,"found string label %s with string ->%s\n",stringblockP->label,stringblockP->string);}
+                else dlprintf(1,"string for label %s not found\n", stringblockP->label);
                 // add new string block to the list
                 List_pushElement_back( stringBlocks, stringblockP); 
 
@@ -354,7 +355,7 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
 
             if (currentLine[0]!='.') {  //a function name is found
 
-                printf("start of new function found-> %s\n",currentLine);
+                dlprintf(1,"start of new function found-> %s\n",currentLine);
                    
                  //create a new func block 
                 funcblockP = (FuncBlock *)calloc(1,sizeof(FuncBlock)); //creating memory space
@@ -380,7 +381,7 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
 
             } else if (currentLine[0]=='.') {  //a label within a function is found
                
-                printf("a label within the current function found-> %s\n",currentLine);
+                dlprintf(1,"a label within the current function found-> %s\n",currentLine);
                 // the current bb will flow through to this new bb unless there was a jmp instr at the end of this bb
                 if(!seen_unc_jump) basicblockP->thenLabel = strdup(currentLine);
                 seen_unc_jump=false;
@@ -406,7 +407,7 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
          if (instp->grpid == INS_GRP_CJMP ) {
 
            //for example-> jle .L2
-           printf("processing conditional jump instruction->%s\n",instp->mnemonic);
+           dlprintf(1,"processing conditional jump instruction->%s\n",instp->mnemonic);
            basicblockP->thenLabel = strdup(instp->operands[0].op_string);  //etc .L2
            // create a temp label for else instructions bb to be created
            char *templabel = get_temp_label();
@@ -437,7 +438,7 @@ void parse_assembly(FILE* fpointer, List *funcBlocks, List *stringBlocks) {
               
             //for example -> jmp .L3
             //if exists, this can only be the last instruction of the current bb
-            printf("processing jump instruction->%s\n",instp->mnemonic);
+            dlprintf(1,"processing jump instruction->%s\n",instp->mnemonic);
             basicblockP->thenLabel = strdup(instp->operands[0].op_string); //etc .L3
             seen_unc_jump = true;
 

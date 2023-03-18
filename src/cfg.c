@@ -19,7 +19,7 @@ BasicBlock *find_block( char *label, List *blocks) {
       if (!strcmp(label, block->label)) return (block);
 
     }
-    printf("target block %s not found\n",label);
+    dlprintf(1,"target block %s not found\n",label);
     return 0;
 
 }
@@ -38,7 +38,7 @@ BasicBlock *find_block( char *label, List *blocks) {
          if (ptr == block->bbptr) return (block);
     }
 
-    printf("target block ptr not found\n");
+    dlprintf(1,"target block ptr not found\n");
     return 0;
 
 }
@@ -71,7 +71,7 @@ void create_CFG(List *funcblocks) {
                 targetBlock = find_block(bb->thenLabel, BBlist);
                 BBlist->current = current;  //restore current pointer
                 bb->thenBB = targetBlock;
-                if (targetBlock) printf("found target block from label ->%s to label ->%s\n",bb->label,targetBlock->label);
+                if (targetBlock) {dlprintf(1,"found target block from label ->%s to label ->%s\n",bb->label,targetBlock->label);}
               
                 //add this bb as a predecessor for the target bb
                 List *predecessors = &(targetBlock->Predecessors);
@@ -86,7 +86,7 @@ void create_CFG(List *funcblocks) {
                 targetBlock = find_block(bb->elseLabel, BBlist);
                 BBlist->current = current;  //restore current pointer
                 bb->elseBB = targetBlock;
-                if (targetBlock) printf("found target block from label ->%s to label ->%s\n", bb->label,targetBlock->label);
+                if (targetBlock) {dlprintf(1,"found target block from label ->%s to label ->%s\n", bb->label,targetBlock->label);}
                
                 //add this bb as a predecessor for the target bb
                 List *predecessors = &(targetBlock->Predecessors);
@@ -118,7 +118,7 @@ void create_CFG(List *funcblocks) {
                     bb->thenBB = targetBlock->thenBB;
                     List_remove(BBlist, targetBlock);
                     newTargetBlock = bb->thenBB;
-                    printf("deleted empty then BB successor of %s\n",bb->label);
+                    dlprintf(1,"deleted empty then BB successor of %s\n",bb->label);
                     
                     //add this bb as a predecessor for the new target bb
                     List *predecessors = &(newTargetBlock->Predecessors);
@@ -140,7 +140,7 @@ void create_CFG(List *funcblocks) {
                     bb->elseBB = targetBlock->thenBB;
                     List_remove(BBlist, targetBlock);
                     newTargetBlock = bb->elseBB;
-                    printf("deleted empty else BB successor of %s\n",bb->label);
+                    dlprintf(1,"deleted empty else BB successor of %s\n",bb->label);
                     
                     //add this bb as a predecessor for the new target bb
                     List *predecessors = &(newTargetBlock->Predecessors);
@@ -297,7 +297,6 @@ void add_dot_link(BasicBlock *bb, BasicBlock *target, int pos, FILE* fp) {
     fprintf(fp,"%s\n","];");
 
 }
-// end of code from extrarnal source 
 
 void generate_cfg_dot_images(List *funcblocks) {
 

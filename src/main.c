@@ -23,7 +23,7 @@ void  print_help(void);
 //void display_intervals(List *funcBlocks);
 bool is64bits = false;
 bool UNIT_TEST = false;
-int glob_veriable = 2;
+int glob_variable = 0; //no debuging
 
 int main(int argc, char* argv[]) {  // argc is the number of inputs thats entered in the commandline
                                     // argv is an array that holds those values
@@ -95,6 +95,10 @@ int main(int argc, char* argv[]) {  // argc is the number of inputs thats entere
               
               print_help();
               exit(1); 
+            } else if (!strcmp(cmdOption,"debug")) {
+              glob_variable = 2;
+              printf("debugging enabled\n");
+              
             } else {
               printf("invalid option\n");
               exit(1);
@@ -154,5 +158,6 @@ void print_help() {
   printf("--mode 32/64                the assembly is in 32 or 64 bits instructions\n");
   printf("--graph                     the CFG module will generate an image of the control flow\n");
   printf("--verbose parser/cfg/data   enable verbose mode for the specified module\n");
+  printf("--debug                     to enable debugging info\n");
   printf("--help                      print options help\n");
 }

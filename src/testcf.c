@@ -26,7 +26,7 @@ bool UNIT_TEST =true;
 List *funcBlocks;         //list of pointers to Blocks
   
 List *BBlist;
-int glob_veriable = 2;
+int glob_variable = 2;
 
 BasicBlock *findbb( char *label) {
     

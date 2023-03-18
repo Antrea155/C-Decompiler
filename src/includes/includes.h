@@ -18,11 +18,17 @@
 #define VERB_TRACE  6
 
 
-extern int glob_veriable;
+extern int glob_variable;
 
-#define dlprintf( lvl, fmt, ... ) { \
+/* #define dlprintf1( lvl, fmt, ... ) { \
 	if( lvl <= glob_veriable ) \
 		printf( "[%d]%s:%u:" fmt "\n", lvl, __FUNCTION__, __LINE__, \
+			##__VA_ARGS__ );   \
+} */
+
+#define dlprintf( lvl, fmt, ... ) { \
+	if( lvl <= glob_variable ) \
+		printf( fmt,  \
 			##__VA_ARGS__ );   \
 }
 
