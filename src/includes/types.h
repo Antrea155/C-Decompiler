@@ -4,7 +4,6 @@
 
 #include <stdint.h>
 #include <stddef.h>
-//#include <types.h>
 
 typedef int64_t address;
 typedef signed char  int8_t;

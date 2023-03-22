@@ -15,31 +15,75 @@ subgraph "main" {
 label = "main";
 cluster=true;
 ".TL1"[
-label = "<f0>.TL1| <f1> pushq |<f2>"
+label = "<f0>.TL1| <f1> leal |<f2>"
 shape = "record"
 ];
 ".TL1":f1 -> ".L2":f0 [
 id=1
 ];
-".L3"[
-label = "<f0>.L3| <f1> movzwl |<f2>"
+".TL1":f2 -> ".TL2":f0 [
+id=1
+];
+".TL2"[
+label = "<f0>.TL2| <f1> subl |<f2>"
 shape = "record"
 ];
-".L3":f1 -> ".L2":f0 [
+".TL2":f1 -> ".L2":f0 [
 id=1
 ];
 ".L2"[
-label = "<f0>.L2| <f1> cmpw |<f2>"
+label = "<f0>.L2| <f1> movl |<f2>"
 shape = "record"
 ];
 ".L2":f1 -> ".L3":f0 [
 id=1
 ];
-".L2":f2 -> ".TL2":f0 [
+".L2":f2 -> ".TL3":f0 [
 id=1
 ];
-".TL2"[
-label = "<f0>.TL2| <f1> movl |<f2>"
+".TL3"[
+label = "<f0>.TL3| <f1> cmpl |<f2>"
+shape = "record"
+];
+".TL3":f1 -> ".L3":f0 [
+id=1
+];
+".TL3":f2 -> ".TL4":f0 [
+id=1
+];
+".TL4"[
+label = "<f0>.TL4| <f1> subl |<f2>"
+shape = "record"
+];
+".TL4":f1 -> ".L3":f0 [
+id=1
+];
+".L3"[
+label = "<f0>.L3| <f1> movl |<f2>"
+shape = "record"
+];
+".L3":f1 -> ".L4":f0 [
+id=1
+];
+".L3":f2 -> ".TL5":f0 [
+id=1
+];
+".TL5"[
+label = "<f0>.TL5| <f1> subl |<f2>"
+shape = "record"
+];
+".TL5":f1 -> ".L5":f0 [
+id=1
+];
+".L4"[
+label = "<f0>.L4| <f1> subl |<f2>"
+shape = "record"
+];
+".L4":f1 -> ".L5":f0 [
+id=1
+];
+".L5"[
+label = "<f0>.L5| <f1> movl |<f2>"
 shape = "record"
 ];
 }

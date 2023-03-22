@@ -43,7 +43,8 @@ typedef enum  {
     INS_GRP_LEA=14,
     INS_GRP_INC=15,
     INS_GRP_PUSH=16,
-    INS_GRP_POP=17
+    INS_GRP_POP=17,
+    INS_GRP_OP=18
   } InstrGroup;
 
 
@@ -79,7 +80,8 @@ typedef struct {
  x86_insn          mnem_id;
  InstrGroup       grpid;
  uint8_t          size;
- char              *mnemonic;
+ char             *mnemonic;
+ char             *op;
  Operand           operands[6];
  uint8_t           opcount; //number of operands in the instruction
  
@@ -141,6 +143,7 @@ typedef struct  {
   x86_insn mnem_id;
   uint8_t size;
   InstrGroup grpid;
+  const char *op;
 } instr_map;
 
 #endif

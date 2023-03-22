@@ -20,11 +20,6 @@
 
 extern int glob_variable;
 
-/* #define dlprintf1( lvl, fmt, ... ) { \
-	if( lvl <= glob_veriable ) \
-		printf( "[%d]%s:%u:" fmt "\n", lvl, __FUNCTION__, __LINE__, \
-			##__VA_ARGS__ );   \
-} */
 
 #define dlprintf( lvl, fmt, ... ) { \
 	if( lvl <= glob_variable ) \
@@ -32,6 +27,22 @@ extern int glob_variable;
 			##__VA_ARGS__ );   \
 }
 
+
+#define vbprintf(verbCF, fmt, ...) \
+{ \
+    if (verbCF) \
+    { \
+        printf(fmt, ##__VA_ARGS__); \
+    } \
+}
+
+#define vbcall(verbCF, func, ...) \
+{ \
+    if (verbCF) \
+    { \
+        func(__VA_ARGS__); \
+    } \
+}
 
 #define error_print( fmt, ...) { dlprintf( VERB_ERROR, fmt, ##__VA_ARGS__ ); }
 
