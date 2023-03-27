@@ -4,8 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "models/assembly.h"
 #include "utils/ll.h"
+#include "models/assembly.h"
+
 
 /* find block by label*/
 BasicBlock *find_block(char *label, List *blocks) {

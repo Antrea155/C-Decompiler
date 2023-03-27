@@ -6,7 +6,7 @@ all: dec.exe
 clean:
 	del *.o
 
-dec.exe: main.o parser.o cfg.o dflow.o cflow.o init.c utils/ll.o
+dec.exe: main.o cfg.o dflow.o cflow.o init.o parser.o utils/ll.o
 	$(CC) $(CFLAGS) -o $@ $^
 
 

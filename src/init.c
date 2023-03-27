@@ -1,5 +1,6 @@
-#include "models/assembly.h"
 #include "utils/ll.h"
+#include "models/assembly.h"
+
 
 /* load instructions and their ids and sizes at initialization */
 const instr_map instr_table[] = {

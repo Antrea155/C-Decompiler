@@ -4,9 +4,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "utils/ll.h"
 #include "models/assembly.h"
 #include "models/dflow.h"
-#include "utils/ll.h"
+
 
 void display_symbols(void);
 extern bool is64bits;
@@ -315,7 +316,7 @@ void analyze_inst(Instruction *ins, BasicBlock *bb) {
 
   if (insGrpId == INS_GRP_PUSH) { // push callee func parms to stack. for x86-32
 
-    if (op1type2 == OP_TYPE_SBR) // ignore pushing the stack base reg
+    if (op1type2 == OP_TYPE_SBR); // ignore pushing the stack base reg
       else if ((op1type1 == OP_TYPE_REG) && seenOnce) {
         reg = cpy_sym(get_symbAt(ins->operands[0].value.reg, 0));
         push(reg);
@@ -464,7 +465,7 @@ void analyze_inst(Instruction *ins, BasicBlock *bb) {
       reg = get_symbAt(ins->operands[0].value.reg, 0);
 
       reg2 = get_symbAt(ins->operands[1].value.reg, 0);
-      if (!strcmp(op, "-") && (strstr(reg->value, ">>31")))
+      if (!strcmp(op, "-") && (strstr(reg->value, ">>31")));
         else {
           sprintf(temp, "(%s)%s(%s) ", reg2->value, op, reg->value);
           reg2->value = strdup(temp);

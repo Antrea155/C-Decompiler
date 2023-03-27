@@ -139,10 +139,13 @@ int main(int argc, char *argv[]) {
   if (VERBOSE_CFG) {
     display_successors(funcBlocksP);
     display_predecessors(funcBlocksP);
-    display_BBs_seq();
+    
   }
 
   data_flow(funcBlocksP, stringBlocksP);
+  if (VERBOSE_DF) {
+      display_dfins(funcBlocksP);
+    }
 
   control_flow(funcBlocksP);
 }

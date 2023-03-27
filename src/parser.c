@@ -4,8 +4,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "models/assembly.h"
 #include "utils/ll.h"
+#include "models/assembly.h"
+
 
 #define FOREVER for (;;)
 #define MAX_CHARS_IN_LINE 200
