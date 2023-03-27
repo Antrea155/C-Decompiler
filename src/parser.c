@@ -326,8 +326,9 @@ void parse_assembly(FILE *fpointer, List *funcBlocks, List *stringBlocks) {
   char currentLine[MAX_CHARS_IN_LINE];
   char testline[MAX_CHARS_IN_LINE];
 
-  printf("instructions table loded. size ->%d\n", instr_table_length);
-  printf("Parsing assembly file\n");
+  dlprintf(1,"instructions table loded. size ->%d\n", instr_table_length);
+  
+  dlprintf(1,"Parsing assembly file\n");
 
   FOREVER // endles loop
   {

@@ -58,7 +58,7 @@ void create_CFG(List *funcblocks) {
   for (int i = 0; i < funcblocks->numItems; i++) {
 
     FuncBlock *block = (FuncBlock *)List_getNextElement(funcblocks);
-    printf("linking basic blocks for function -> %s\n", block->funcName);
+    dlprintf(1,"linking basic blocks for function -> %s\n", block->funcName);
 
     List *BBlist = &(block->funcBBlist);
     List_reset(BBlist);

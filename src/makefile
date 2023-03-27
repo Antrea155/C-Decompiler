@@ -2,6 +2,7 @@ CC=gcc
 CFLAGS=-Wall -Wextra -std=c11
 
 all: dec.exe 
+		@echo --- Build completed successfully. To run the exetuble, please type "dec" ---
 
 clean:
 	del *.o

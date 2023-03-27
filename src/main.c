@@ -109,6 +109,7 @@ int main(int argc, char *argv[]) {
       strcpy(assFile, argv[i]);
   }
 
+  printf("\n");
   // reset output file
   fPointer = fopen("recover.c", "w");
   fclose(fPointer);
@@ -124,12 +125,14 @@ int main(int argc, char *argv[]) {
   fclose(fPointer);
 
   if (VERBOSE_PARSE) {
+    printf("\n\n--- Parser verbose ---\n\n");
     printf("\n\nBlocks in memory\n\n");
     printf("\nFUNCTION blocks\n");
     print_blocks(funcBlocksP);
     printf("\nSTRING blocks\n");
     print_string_blocks(stringBlocksP);
     printf("\n\nEND of Blocks in memory\n\n");
+    printf("\n\n--- Parser verbose Completed ---\n\n");
   }
 
   create_CFG(funcBlocksP);
@@ -137,23 +140,34 @@ int main(int argc, char *argv[]) {
     generate_cfg_dot_images(funcBlocksP);
   }
   if (VERBOSE_CFG) {
+    printf("\n\n--- Control Flow Graph verbose ---\n\n");
     display_successors(funcBlocksP);
     display_predecessors(funcBlocksP);
-    
+    printf("\n\n--- Control Flow Graph verbose Completed ---\n\n");
   }
 
   data_flow(funcBlocksP, stringBlocksP);
   if (VERBOSE_DF) {
+      printf("\n\n--- Data Flow verbose ---\n\n");
       display_dfins(funcBlocksP);
+      printf("\n\n--- Data Flow verbose Completed ---\n\n");
     }
+
+  
+ if (VERBOSE_CF) {
+    printf("\n\n--- Control Flow verbose for each function ---\n\n");
+  }
 
   control_flow(funcBlocksP);
 }
 
 void print_help() {
-
+  printf("\n");
   printf("Usage: dec [ OPTIONS ] assembly_file\n");
+  printf("e.g. dec --mode 64 --verbose cf ../test_assemblies/assembly_file.s\n");
+  printf("\n");
   printf("recover C code from an assembly listing in AT&T syntax\n");
+  printf("\n");
   printf("Options:\n");
   printf("--mode 32/64                   the assembly is in 32 or 64 bits "
          "instructions\n");

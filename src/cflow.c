@@ -989,8 +989,10 @@ void control_flow(List *funcBlocks) {
     } else
       List_pushElement_back(&(limitnode->ClikeInsL), newClikeIns2("\n}"));
 
-    print_func_ClikeIns();
+    
+    if(VERBOSE_CF) print_func_ClikeIns();
     save_func_ClikeIns();
+    vbprintf(VERBOSE_CF,"\n\n--- Control Flow verbose for the function: %s Completed ---\n\n",funcblock->funcName);
 
   } // end of control flow analysis of current function. get next one
 }
@@ -1051,15 +1053,16 @@ void display_allfuncIntervals() {
 void print_func_ClikeIns() {
 
   List_reset(curBBlist);
-
+  
   printf("\n\nC like instructions in function\n");
+  printf("\n");
 
   for (int i = 0; i < curBBlist->numItems; i++) {
 
     BasicBlock *bb = (BasicBlock *)List_getNextElement(curBBlist);
     if (bb->merged)
       continue;
-    printf("Instructions in ->[%d %s]\n", bb->pos, bb->label);
+    vbprintf(VERBOSE_CF,"Instructions in ->[%d %s]\n", bb->pos, bb->label);
     List *clikeIns = &(bb->ClikeInsL);
     List_reset(clikeIns);
 
