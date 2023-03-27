@@ -4,8 +4,6 @@
 #include <stdio.h>
 #include <stdbool.h>
 
-#include "library_visibilities.h"
-
 
 #define VERSION "0.0.2"
 
