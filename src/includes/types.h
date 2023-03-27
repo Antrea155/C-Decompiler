@@ -5,6 +5,9 @@
 #include <stdint.h>
 #include <stddef.h>
 
+/* Defining the types used */
+
+
 typedef int64_t address;
 typedef signed char  int8_t;
 typedef signed short int16_t;

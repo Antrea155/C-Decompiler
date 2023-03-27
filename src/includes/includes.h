@@ -17,6 +17,7 @@
 #define VERB_DEBUG  5
 #define VERB_TRACE  6
 
+/* The following macro functions were created by me for verbose and debug options*/
 
 extern int glob_variable;
 
