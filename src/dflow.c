@@ -693,10 +693,10 @@ void display_dfins(List *funcblocks) {
   }
 }
 
-// return the definition of a function
-// funcname(param list)
-// this will be called by the control flow analysis module
-
+/* return the definition of a function
+   funcname(param list)
+   this will be called by the control flow analysis module
+ */
 char *getFuncDefinition(char *funcname) {
 
   char *funcdef = calloc(1, 40);

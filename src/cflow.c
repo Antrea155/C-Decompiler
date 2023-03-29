@@ -37,6 +37,7 @@ void print_loop_nodes(List *loop_nodes);
 List *curBBlist;
 List *curAllfuncIntervals;
 
+/* Get the reverce C like operator */
 char *reverseOp(char *op) {
   if (!strcmp(op, ">"))
     return "<=";
@@ -57,20 +58,19 @@ char *reverseOp(char *op) {
   return ("??");
 }
 
+/* Position nodes in cfg */
 void number_bbs(BasicBlock *bb, int *n) {
 
   if ((bb) && (!bb->visited)) {
     bb->visited = true;
     number_bbs(bb->elseBB, n);
     number_bbs(bb->thenBB, n);
-    // number_bbs(bb->elseBB, n);
     bb->pos = *n;
     *n = *n - 1;
   }
 }
 
-// create a new BBnode List element which has a pointer to a BB of an existing
-// BBnode
+/* create a BBnode from an existing BBnode and return a pointer to it */
 BBnode *newBBnode(BBnode *bbn) {
 
   BBnode *newBB = (BBnode *)calloc(1, sizeof(BBnode));
@@ -78,7 +78,7 @@ BBnode *newBBnode(BBnode *bbn) {
   return newBB;
 }
 
-// create a new BBnode List element which has a pointer to an existing BB
+/* create a BBnode from an existing Basic Block and return a pointer to it */
 BBnode *newBBnode2(BasicBlock *bb) {
 
   BBnode *newBB = (BBnode *)calloc(1, sizeof(BBnode));
@@ -86,8 +86,7 @@ BBnode *newBBnode2(BasicBlock *bb) {
   return newBB;
 }
 
-// create a new ClikeIns List element which has the string of an existing
-// ClikeIns
+/* create a new C like Instruction from an existing one */
 ClikeIns *newClikeIns(ClikeIns *ins) {
 
   ClikeIns *newClikeIns = (ClikeIns *)calloc(1, sizeof(ClikeIns));
@@ -95,7 +94,7 @@ ClikeIns *newClikeIns(ClikeIns *ins) {
   return newClikeIns;
 }
 
-// create a new ClikeIns List element which has a specified string
+/* create a new C like instruction from a string */
 ClikeIns *newClikeIns2(char *ins) {
 
   ClikeIns *newClikeIns = (ClikeIns *)calloc(1, sizeof(ClikeIns));
@@ -115,7 +114,7 @@ void set_all_not_visited() {
   }
 }
 
-// get number of nodes in first interval
+/* return number of nodes in first interval */
 int num_of_nodes_in_interval() {
 
   IntervalBlock *intervalBlock =
@@ -125,8 +124,9 @@ int num_of_nodes_in_interval() {
   return intervalnodes->numItems;
 }
 
-// get bb in limit interval. this should be the first and only interval in the
-// intervals list
+/*get bb in limit interval. this should be the first and only interval in the
+  intervals list
+*/
 BasicBlock *get_bb_in_limit_interval() {
 
   IntervalBlock *intervalBlock =
@@ -137,7 +137,7 @@ BasicBlock *get_bb_in_limit_interval() {
   return (bbnode->bbptr);
 }
 
-// remove a BB from a the predecessors list of another BB
+/* remove a BB from a the predecessors list of another BB */
 void remove_predecessor(BasicBlock *bb, BasicBlock *fromBB) {
 
   List *predecessors = &(fromBB->Predecessors);
@@ -154,7 +154,7 @@ void remove_predecessor(BasicBlock *bb, BasicBlock *fromBB) {
   vbprintf(VERBOSE_CF, "%d not found in predecessors\n", bb->pos);
 }
 
-// add a BB to the predecessors list of another BB
+/* add a BB to the predecessors list of another BB */
 void add_predecessor(BasicBlock *bb, BasicBlock *toBB) {
 
   List *predecessors = &(toBB->Predecessors);
@@ -164,6 +164,7 @@ void add_predecessor(BasicBlock *bb, BasicBlock *toBB) {
   List_pushElement_back(predecessors, newPred);
 }
 
+/* get a BB using its position in cfg tree (BFS)*/
 BasicBlock *get_bb_in_cfg(int pos, List *BBlist) {
 
   ListElement *current = BBlist->current;
@@ -183,8 +184,9 @@ BasicBlock *get_bb_in_cfg(int pos, List *BBlist) {
   return NULL;
 }
 
-// return true if a return statement has already been added in C like
-// instructions
+/*return true if a return statement has already been added at 
+ the end of C like  instructions
+*/
 bool returnAdded(List *clikeInsList) {
 
   ClikeIns *LastIns = (ClikeIns *)List_getTail(clikeInsList);
@@ -193,9 +195,9 @@ bool returnAdded(List *clikeInsList) {
   return false;
 }
 
-// apend the C like instructions in the thenChild bb to the
-// C like instructions of its parent bb
-
+/*apend the C like instructions in the child bb to the
+ C like instructions of its parent bb
+ */
 void mergeT2instructions(BasicBlock *bb, BasicBlock *child) {
 
   List *parentInstructions = &(bb->ClikeInsL);
@@ -210,6 +212,7 @@ void mergeT2instructions(BasicBlock *bb, BasicBlock *child) {
   }
 }
 
+/* Based on the conditionType, merge the bb's instr */
 void mergeCondInstructions(BasicBlock *bb, int condType) {
 
   char tempIns[100];
@@ -276,6 +279,7 @@ void mergeCondInstructions(BasicBlock *bb, int condType) {
   }
 }
 
+/* Merge all the instr in a loop*/
 void mergeLoopInstructions(IntervalBlock *intervalb) {
 
   BasicBlock *loophead = intervalb->loophead;
@@ -336,8 +340,7 @@ void mergeLoopInstructions(IntervalBlock *intervalb) {
   }
 }
 
-// true if a BB with a specified pos belongs to a list of BBnode elements
-
+/* true if a BB with a specified pos belongs to a list of BBnode elements */
 bool belongs(int pos, List *aList) {
 
   ListElement *current = aList->current;
@@ -355,6 +358,7 @@ bool belongs(int pos, List *aList) {
   return false;
 }
 
+/* check if all the nodes in a BB's predList are included in Interval's BBList*/
 bool includesAll(List *IntervalList, List *predecesorsList) {
 
   ListElement *current = predecesorsList->current;
@@ -372,10 +376,11 @@ bool includesAll(List *IntervalList, List *predecesorsList) {
   return true;
 }
 
+/* get the intersection set between interval nodes and predecessors of 
+   interval's head
+ */
 List *get_intersection(IntervalBlock *intervalblock) {
 
-  // get the intersection set between interval nodes and predecessors of
-  // interval's head
   List *ihead_predecessors = &(intervalblock->ihead->Predecessors);
   List *intervalnodes = &(intervalblock->BBsInInterval);
 
@@ -402,6 +407,7 @@ int noOfBBchildren(BasicBlock *bb) {
   return (bb->thenBB ? 1 : 0) + (bb->elseBB ? 1 : 0);
 }
 
+/* Check if T2 transformation is appliable*/
 bool canApplyT2(BasicBlock *bb) {
 
   if ((noOfBBchildren(bb) == 1)) {
@@ -413,7 +419,7 @@ bool canApplyT2(BasicBlock *bb) {
   return false;
 }
 
-// return intervalBlock that bb belongs to
+/* return intervalBlock that bb belongs to */
 IntervalBlock *get_IntervalBlock(BasicBlock *bb) {
 
   ListElement *current = curAllfuncIntervals->current;
@@ -459,8 +465,8 @@ void delete_from_Interval(List *interval, BasicBlock *bb) {
   vbprintf(VERBOSE_CF, "bb %d could not be removed from interval\n", bb->pos);
 }
 
-void adjust_pred(BasicBlock *bb, BasicBlock *achild, BasicBlock *otherChild,
-                 int cond) {
+/* fixing the preds of the nodes that were affected during the intr merging process*/
+void adjust_pred(BasicBlock *bb, BasicBlock *achild, BasicBlock *otherChild, int cond) {
 
   List *predecesorsOfchild = &(achild->Predecessors);
 
@@ -475,8 +481,7 @@ void adjust_pred(BasicBlock *bb, BasicBlock *achild, BasicBlock *otherChild,
     Predecessor *pred = (Predecessor *)List_getNextElement(predecesorsOfchild);
 
     if ((pred->bbptr->pos != bb->pos) &&
-        (((cond != IF_3) && (pred->bbptr->pos != otherChild->pos)) ||
-         (cond == IF_3))) {
+        (((cond != IF_3) && (pred->bbptr->pos != otherChild->pos)) || (cond == IF_3))) {
       vbprintf(VERBOSE_CF, "adjusting predecessor ->%d of child ->%d\n",
                pred->bbptr->pos, achild->pos);
       if (pred->bbptr->thenBB == achild)
@@ -492,7 +497,7 @@ void adjust_pred(BasicBlock *bb, BasicBlock *achild, BasicBlock *otherChild,
 
   predecesorsOfchild->current = current;
 }
-
+/* merge bb with thenbb during T2 trans process */
 void mergeT2(BasicBlock *bb, BasicBlock *thenchild) {
 
   vbprintf(VERBOSE_CF, "bb [%s %d] will be merged with [%s %d]\n", bb->label,
@@ -527,7 +532,6 @@ void mergeT2(BasicBlock *bb, BasicBlock *thenchild) {
 
 int ifcond(BasicBlock *bb, List *interval) {
 
-  // TODO first check if interval also has a loop
   if (!belongs(bb->thenBB->pos, interval) &&
       !belongs(bb->elseBB->pos, interval))
     return 0;
@@ -544,7 +548,6 @@ int ifcond(BasicBlock *bb, List *interval) {
 
 bool ifElsecond(BasicBlock *bb, List *interval) {
 
-  // TODO first check if interval also has a loop
   if (!belongs(bb->thenBB->pos, interval) &&
       !belongs(bb->elseBB->pos, interval))
     return false;
@@ -556,6 +559,7 @@ bool ifElsecond(BasicBlock *bb, List *interval) {
   return false;
 }
 
+/* merge bbs based on the IF condition type found */
 void mergeCond(BasicBlock *bb, int condType) {
 
   vbprintf(VERBOSE_CF, "will merge conditional at bb -> [%s %d]\n", bb->label,
@@ -566,7 +570,7 @@ void mergeCond(BasicBlock *bb, int condType) {
 
   if (condType == IF_1) {
 
-    //  merge if (leftop op right op) with {then-instructions}
+    // merge if (leftop op right op) with {then-instructions}
     // merge with else-instructions
     vbprintf(VERBOSE_CF, "merge case 1 ifcond\n");
     mergeCondInstructions(bb, condType);
@@ -643,7 +647,7 @@ void mergeCond(BasicBlock *bb, int condType) {
     add_predecessor(bb, thenchild->thenBB);
   }
 
-  // if a predx of a child is not bb or the other child make predx point to bb
+  // if a predx of a child is not bb or the other child, make predx point to bb
   // and add predx to bb's preds if not exists
   if (condType != 3) {
     adjust_pred(bb, thenchild, elsechild, condType);
@@ -657,6 +661,7 @@ void mergeCond(BasicBlock *bb, int condType) {
   }
 }
 
+/* Check for if or ifelse conditions */
 void check_for_conditionals(List *interval) {
 
   bool found = true;
@@ -687,6 +692,7 @@ void check_for_conditionals(List *interval) {
   interval->current = current;
 }
 
+/* merge the nodes in a Loop*/
 void merge_loop(IntervalBlock *intervalblock) {
 
   BasicBlock *bb = intervalblock->loophead;
@@ -778,8 +784,9 @@ bool check_for_loops(IntervalBlock *intervalb) {
   return true;
 }
 
-// evaluate the loop type found in an interval (pre-tested, post-tested,
-// endless)
+/* evaluate the loop type found in an interval (pre-tested, post-tested,
+   endless)
+ */ 
 void eval_loop_type(IntervalBlock *intervalb) {
 
   List *latchnodes = &(intervalb->latchNodes);
@@ -810,6 +817,9 @@ void eval_loop_type(IntervalBlock *intervalb) {
   vbprintf(VERBOSE_CF, "loop type is ->%d\n", intervalb->looptype);
 }
 
+/* a bb can be added in an interval if all of its pred's bbs
+   are also included in that interval
+ */
 IntervalBlock *can_be_added_to_interval(List *curAllfuncIntervals,
                                         BasicBlock *bb) {
 
@@ -820,6 +830,7 @@ IntervalBlock *can_be_added_to_interval(List *curAllfuncIntervals,
 
     IntervalBlock *iblock =
         (IntervalBlock *)List_getNextElement(curAllfuncIntervals);
+
     if (includesAll(&(iblock->BBsInInterval), &(bb->Predecessors))) {
       curAllfuncIntervals->current = current;
       return iblock;
@@ -830,6 +841,10 @@ IntervalBlock *can_be_added_to_interval(List *curAllfuncIntervals,
   return NULL;
 }
 
+/* for every bb in the current bblist check if it
+   can be added in an intervalb,if not create a new intervalb
+   with that bb as the interval head
+ */
 void createIntervals() {
 
   IntervalBlock *anIntervalBlock;
@@ -852,6 +867,7 @@ void createIntervals() {
 
       IntervalBlock *curInterval =
           (IntervalBlock *)calloc(1, sizeof(IntervalBlock));
+
       List_new(&(curInterval->BBsInInterval));
       curInterval->ihead = bbinProcess;
       bbinProcess->head = curInterval->ihead;
@@ -863,6 +879,7 @@ void createIntervals() {
   }
 }
 
+/* for every bb in the currbb list, check if T2 trans is appliable*/
 void performT2() {
 
   vbprintf(VERBOSE_CF, "\n\nperfroming T2 transformation\n");

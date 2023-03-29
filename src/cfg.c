@@ -40,10 +40,8 @@ Predecessor *find_bbptr(BasicBlock *ptr, List *blocks) {
   return 0;
 }
 
-/* For every funcBlock iterate over its basicblock list
-   if bb has thenlabel, then find the block with that label
-   and save it as thenbb.
-   Same process with elselabel
+/* create control flow links between basic blocks
+   each basic block may have a thenBB and an elseBB pointers
  */
 void create_CFG(List *funcblocks) {
 
@@ -164,7 +162,7 @@ void create_CFG(List *funcblocks) {
   }
 }
 
-/* Each funcion block has a successors list
+/* display the successors list of the basic blocks in a function
    Successors are the basicblocks that "flow" out from a function block
  */
 void display_successors(List *funcblocks) {
@@ -201,7 +199,7 @@ void display_successors(List *funcblocks) {
   }
 }
 
-/* Each funcion block has a predecessors list
+/* display the predecessors list of the basics blocks in a function
    Predecessors are the basicblocks that "flow" into a function block
  */
 void display_predecessors(List *funcblocks) {
