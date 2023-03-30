@@ -13,8 +13,8 @@
  a number of basic blocks are created, labeled B1 - B15, with no instructions and linked in accordance with fig 2 in 
  article "structuring decompiled graphs" https://link.springer.com/content/pdf/10.1007%2F3-540-61053-7_55.pdf
  the control flow module is then called and must verify that:
-   the test CFG is firstly divided to correct number of intervals and then T2 transformations are
-   applied to these intervals  until the limit Graph is reached
+ the test CFG is firstly divided to correct number of intervals and then T2 transformations are
+ pplied to these intervals  until the limit Graph is reached
 */
 
 void control_flow(List *funcBlocks);
@@ -47,12 +47,12 @@ BasicBlock *findbb( char *label) {
 void addbb(char *label) {
 
        
-        //create a new basic block for the instructions of the current label
+    //create a new basic block for the instructions of the current label
     BasicBlock *basicblockP = (BasicBlock *)calloc(1,sizeof(BasicBlock)); //creating memory space
     basicblockP->label =strdup(label);
     //add current basic block to the func basic blocks list
     List_pushElement_back( BBlist, basicblockP); 
-        //create a list to hold the predecessors in the basic block
+    //create a list to hold the predecessors in the basic block
     List_new(&(basicblockP->Instructions));
     List_new(&(basicblockP->Predecessors));
 }
@@ -83,7 +83,7 @@ int main() {
 
     funcBlocks = List_new(NULL);  //create the list of function blocks
 
-        //create a new func block 
+    //create a new func block 
     FuncBlock *funcblockP = (FuncBlock *)calloc(1,sizeof(FuncBlock)); //creating memory space
     funcblockP->funcName = strdup("testFunc");
 
@@ -122,7 +122,6 @@ int main() {
     linkbb("B8","B10","B9");
     linkbb("B9","B10",0);
     linkbb("B10","B11",0);
-    //linkbb("B11","B12","B7");
     linkbb("B12","B13",0);
     linkbb("B13","B14",0);
     linkbb("B14","B13","B15");
