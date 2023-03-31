@@ -233,13 +233,12 @@ void display_predecessors(List *funcblocks) {
   }
 }
 
-// genearte image graphs
-//  see https://graphviz.org/Gallery/directed/datastruct.html
-//  decompiler generates the cfgimage.dot file
-//  need to run below command to create the cfgimages.svg file from the .dot
-//  file. open it in a browser C:\decompiler\dot>dot -Tsvg cfgimages.dot -o
-//  cfgimages.svg
-
+/* genearte image graphs
+   see https://graphviz.org/Gallery/directed/datastruct.html
+   decompiler generates the cfgimage.dot file
+   need to run below command to create the cfgimages.svg file from the .dot
+   file. open it in a browser C:\decompiler\dot>dot -Tsvg cfgimages.dot -o cfgimages.svg
+ */
 FILE *init_image(char *filename) {
 
   FILE *fpointer;
