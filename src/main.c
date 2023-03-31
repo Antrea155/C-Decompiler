@@ -74,9 +74,6 @@ int main(int argc, char *argv[]) {
         } else if (!strcmp(cmdOption, "graph")) {
           GEN_GRAPH = true;
           printf("graph image genaration set\n");
-          printf("To generate the graph go to the path where the dot file is located.\n");
-          printf("Then type the following command: dot -Tsvg cfgimages.dot -o cfgimages.svg\n");
-          printf("The graph can be located in the dot file.\n");
         } else if (!strcmp(cmdOption, "verbose")) {
           ++i;
           if (!strcmp("parser", argv[i])) {
