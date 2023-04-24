@@ -11,11 +11,11 @@ shape = "ellipse"
 ];
 edge [
 ];
-subgraph "main" {
-label = "main";
+subgraph "power(int, unsigned int)" {
+label = "power(int, unsigned int)";
 cluster=true;
 ".TL1"[
-label = "<f0>.TL1| <f1> leal |<f2>"
+label = "<f0>.TL1| <f1> pushl |<f2>"
 shape = "record"
 ];
 ".TL1":f1 -> ".L2":f0 [
@@ -25,58 +25,31 @@ id=1
 id=1
 ];
 ".TL2"[
-label = "<f0>.TL2| <f1> subl |<f2>"
+label = "<f0>.TL2| <f1> movl |<f2>"
 shape = "record"
 ];
-".TL2":f1 -> ".L2":f0 [
+".TL2":f1 -> ".L3":f0 [
 id=1
 ];
 ".L2"[
 label = "<f0>.L2| <f1> movl |<f2>"
 shape = "record"
 ];
-".L2":f1 -> ".L3":f0 [
+".L2":f1 -> ".L4":f0 [
 id=1
 ];
 ".L2":f2 -> ".TL3":f0 [
 id=1
 ];
 ".TL3"[
-label = "<f0>.TL3| <f1> cmpl |<f2>"
+label = "<f0>.TL3| <f1> movl |<f2>"
 shape = "record"
 ];
-".TL3":f1 -> ".L3":f0 [
-id=1
-];
-".TL3":f2 -> ".TL4":f0 [
-id=1
-];
-".TL4"[
-label = "<f0>.TL4| <f1> subl |<f2>"
-shape = "record"
-];
-".TL4":f1 -> ".L3":f0 [
-id=1
-];
-".L3"[
-label = "<f0>.L3| <f1> movl |<f2>"
-shape = "record"
-];
-".L3":f1 -> ".L4":f0 [
-id=1
-];
-".L3":f2 -> ".TL5":f0 [
-id=1
-];
-".TL5"[
-label = "<f0>.TL5| <f1> subl |<f2>"
-shape = "record"
-];
-".TL5":f1 -> ".L5":f0 [
+".TL3":f1 -> ".L5":f0 [
 id=1
 ];
 ".L4"[
-label = "<f0>.L4| <f1> subl |<f2>"
+label = "<f0>.L4| <f1> movl |<f2>"
 shape = "record"
 ];
 ".L4":f1 -> ".L5":f0 [
@@ -84,6 +57,174 @@ id=1
 ];
 ".L5"[
 label = "<f0>.L5| <f1> movl |<f2>"
+shape = "record"
+];
+".L5":f1 -> ".L3":f0 [
+id=1
+];
+".L3"[
+label = "<f0>.L3| <f1> leave |<f2>"
+shape = "record"
+];
+}
+subgraph "order(int)" {
+label = "order(int)";
+cluster=true;
+".TL4"[
+label = "<f0>.TL4| <f1> pushl |<f2>"
+shape = "record"
+];
+".TL4":f1 -> ".L7":f0 [
+id=1
+];
+".L8"[
+label = "<f0>.L8| <f1> addl |<f2>"
+shape = "record"
+];
+".L8":f1 -> ".L7":f0 [
+id=1
+];
+".L7"[
+label = "<f0>.L7| <f1> cmpl |<f2>"
+shape = "record"
+];
+".L7":f1 -> ".L8":f0 [
+id=1
+];
+".L7":f2 -> ".TL5":f0 [
+id=1
+];
+".TL5"[
+label = "<f0>.TL5| <f1> movl |<f2>"
+shape = "record"
+];
+}
+subgraph "isArmstrong(long)" {
+label = "isArmstrong(long)";
+cluster=true;
+".TL6"[
+label = "<f0>.TL6| <f1> pushl |<f2>"
+shape = "record"
+];
+".TL6":f1 -> ".L11":f0 [
+id=1
+];
+".L12"[
+label = "<f0>.L12| <f1> movl |<f2>"
+shape = "record"
+];
+".L12":f1 -> ".L11":f0 [
+id=1
+];
+".L11"[
+label = "<f0>.L11| <f1> cmpl |<f2>"
+shape = "record"
+];
+".L11":f1 -> ".L12":f0 [
+id=1
+];
+".L11":f2 -> ".L13":f0 [
+id=1
+];
+".L14"[
+label = "<f0>.L14| <f1> movl |<f2>"
+shape = "record"
+];
+".L14":f1 -> ".L13":f0 [
+id=1
+];
+".L13"[
+label = "<f0>.L13| <f1> cmpl |<f2>"
+shape = "record"
+];
+".L13":f1 -> ".L14":f0 [
+id=1
+];
+".L13":f2 -> ".TL8":f0 [
+id=1
+];
+".TL8"[
+label = "<f0>.TL8| <f1> movl |<f2>"
+shape = "record"
+];
+".TL8":f1 -> ".L15":f0 [
+id=1
+];
+".TL8":f2 -> ".TL9":f0 [
+id=1
+];
+".TL9"[
+label = "<f0>.TL9| <f1> movl |<f2>"
+shape = "record"
+];
+".TL9":f1 -> ".L16":f0 [
+id=1
+];
+".L15"[
+label = "<f0>.L15| <f1> movl |<f2>"
+shape = "record"
+];
+".L15":f1 -> ".L16":f0 [
+id=1
+];
+".L16"[
+label = "<f0>.L16| <f1> movl |<f2>"
+shape = "record"
+];
+}
+subgraph "main" {
+label = "main";
+cluster=true;
+".TL10"[
+label = "<f0>.TL10| <f1> leal |<f2>"
+shape = "record"
+];
+".TL10":f1 -> ".L18":f0 [
+id=1
+];
+".TL10":f2 -> ".TL11":f0 [
+id=1
+];
+".TL11"[
+label = "<f0>.TL11| <f1> subl |<f2>"
+shape = "record"
+];
+".TL11":f1 -> ".L19":f0 [
+id=1
+];
+".L18"[
+label = "<f0>.L18| <f1> subl |<f2>"
+shape = "record"
+];
+".L18":f1 -> ".L19":f0 [
+id=1
+];
+".L19"[
+label = "<f0>.L19| <f1> movl |<f2>"
+shape = "record"
+];
+".L19":f1 -> ".L20":f0 [
+id=1
+];
+".L19":f2 -> ".TL12":f0 [
+id=1
+];
+".TL12"[
+label = "<f0>.TL12| <f1> subl |<f2>"
+shape = "record"
+];
+".TL12":f1 -> ".L21":f0 [
+id=1
+];
+".L20"[
+label = "<f0>.L20| <f1> subl |<f2>"
+shape = "record"
+];
+".L20":f1 -> ".L21":f0 [
+id=1
+];
+".L21"[
+label = "<f0>.L21| <f1> movl |<f2>"
 shape = "record"
 ];
 }

@@ -1,22 +1,11 @@
 main(){
 
-local_12 = 3; local_16 = 4; 
+local_4 = 0; local_8 = 1; local_4 = (local_8)+2; 
 
-if (local_12>local_16) {local_20 = printf("then if 1"); }
-
-
-
-if (local_12>local_16) {
-
-if (local_16>20) {local_20 = printf("nested if"); }
-
-
-
-if (local_12>local_16) {local_20 = printf("greater"); }
-else {local_20 = printf("smaller"); }
-
-}
+if (local_4==3) {local_12 = printf("yes"); }
 
 return 0;
 }
+
+
 

@@ -22,6 +22,7 @@ void display_successors(List *funcblocks);
 void display_predecessors(List *funcBlocksP);
 bool is64bits = false;
 bool UNIT_TEST =true;
+bool VERBOSE_CF =true;
 
 List *funcBlocks;         //list of pointers to Blocks
   
