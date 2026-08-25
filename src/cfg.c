@@ -7,6 +7,13 @@
 #include "utils/ll.h"
 #include "models/assembly.h"
 
+#include <string.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#include <limits.h>
+#endif
 
 /* find block by label*/
 BasicBlock *find_block(char *label, List *blocks) {
@@ -239,31 +246,97 @@ void display_predecessors(List *funcblocks) {
    need to run below command to create the cfgimages.svg file from the .dot
    file. open it in a browser C:\decompiler\dot>dot -Tsvg cfgimages.dot -o cfgimages.svg
  */
-FILE *init_image(char *filename) {
 
-  FILE *fpointer;
-  char filen[40];
+static int get_exe_dir(char *buf, size_t size)
+{
+#ifdef _WIN32
+    DWORD len = GetModuleFileNameA(NULL, buf, (DWORD)size);
 
-  strcpy(filen, "C:\\decompiler\\dot\\");
-  strcat(filen, filename);
-  strcat(filen, ".dot");
-  fpointer = fopen(filen, "w+");
+    if (len == 0 || len >= size)
+        return 0;
 
-  fprintf(fpointer, "%s\n", "digraph g {");
-  fprintf(fpointer, "%s\n", "fontname=\"Helvetica,Arial,sans-serif\"");
-  fprintf(fpointer, "%s\n", "node [fontname=\"Helvetica,Arial,sans-serif\"]");
-  fprintf(fpointer, "%s\n", "edge [fontname=\"Helvetica,Arial,sans-serif\"]");
-  fprintf(fpointer, "%s\n", "graph [");
-  fprintf(fpointer, "%s\n", "rankdir = \"LR\"");
-  fprintf(fpointer, "%s\n", "];");
-  fprintf(fpointer, "%s\n", "node [");
-  fprintf(fpointer, "%s\n", "fontsize = \"14\"");
-  fprintf(fpointer, "%s\n", "shape = \"ellipse\"");
-  fprintf(fpointer, "%s\n", "];");
-  fprintf(fpointer, "%s\n", "edge [");
-  fprintf(fpointer, "%s\n", "];");
+    char *slash = strrchr(buf, '\\');
 
-  return fpointer;
+#else
+    ssize_t len = readlink("/proc/self/exe", buf, size - 1);
+
+    if (len == -1)
+        return 0;
+
+    buf[len] = '\0';
+
+    char *slash = strrchr(buf, '/');
+#endif
+
+    if (slash == NULL)
+        return 0;
+
+    *(slash + 1) = '\0';
+
+    return 1;
+}
+
+FILE *init_image(char *filename)
+{
+    FILE *fpointer;
+    char filen[4096];
+
+    if (!get_exe_dir(filen, sizeof(filen))) {
+        return NULL;
+    }
+
+    // filen:
+    // C:\...\C-Decompiler\src\
+
+    // Remove "src\"
+    char *slash = strrchr(filen, '\\');
+    if (slash != NULL) {
+        *slash = '\0';
+    }
+
+    slash = strrchr(filen, '\\');
+    if (slash != NULL) {
+        *(slash + 1) = '\0';
+    }
+
+    // filen:
+    // C:\...\C-Decompiler\
+
+    strcat(filen, "dot\\");
+
+    // filen:
+    // C:\...\C-Decompiler\dot\
+
+    size_t used = strlen(filen);
+
+    snprintf(filen + used, sizeof(filen) - used, "%s.dot", filename
+    );
+
+    printf("Creating DOT file: %s\n", filen);
+
+    fpointer = fopen(filen, "w+");
+
+    if (fpointer == NULL) {
+        perror("fopen");
+        fprintf(stderr, "Failed to open: %s\n", filen);
+        return NULL;
+    }
+
+    fprintf(fpointer, "digraph g {\n");
+    fprintf(fpointer, "fontname=\"Helvetica,Arial,sans-serif\"\n");
+    fprintf(fpointer, "node [fontname=\"Helvetica,Arial,sans-serif\"]\n");
+    fprintf(fpointer, "edge [fontname=\"Helvetica,Arial,sans-serif\"]\n");
+    fprintf(fpointer, "graph [\n");
+    fprintf(fpointer, "rankdir = \"LR\"\n");
+    fprintf(fpointer, "];\n");
+    fprintf(fpointer, "node [\n");
+    fprintf(fpointer, "fontsize = \"14\"\n");
+    fprintf(fpointer, "shape = \"ellipse\"\n");
+    fprintf(fpointer, "];\n");
+    fprintf(fpointer, "edge [\n");
+    fprintf(fpointer, "];\n");
+
+    return fpointer;
 }
 
 void init_cluster(char *cluster, FILE *fp) {
