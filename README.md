@@ -35,7 +35,7 @@ assembly.s
         |
    internal Blocks
 
-(i will be using mingw32 bcs thats the GNU i have installed )
+(I'm using mingw32)
 
 To debug the code:
        -> Clean .o* files
@@ -49,7 +49,7 @@ Compile commands: (Inside src/)
               -> Regenerate .o files
 
        -> Run :  mingw32-make clean
-              -> To clean the .o files ( not including .\utils\ll.o) 
+              -> To clean the .o files (except .\utils\ll.o) 
        -> Run : Remove-Item .\utils\ll.o
               -> To clean .\utils\ll.o
 
