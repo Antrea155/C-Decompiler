@@ -4,26 +4,26 @@ The decompiler that takes x86/x86-64 assembly listings in AT&T syntax and attemp
 some basic points regarding work flow of the program
 
 assembly listing (.s)
-        |
+       |
    parser.c
-        |
+       |
  function/basic-block representation
-        |
+       |
      cfg.c
-        |
+       |
  Control-flow graph
-        |
+       |
     dflow.c
-        |
+       |
  Data-flow analysis
-        |
+       |
     cflow.c
-        |
+       |
  Control-flow reconstruction
-        |
+       |
     recover.c
-        |
- recovered C/C++ source
+       |
+ recovered C source
 
 assembly.s
  |
@@ -32,7 +32,7 @@ assembly.s
  |-- functions
  |-- strings
  |-- operands
-        |
+       |
    internal Blocks
 
 (I'm using mingw32)
